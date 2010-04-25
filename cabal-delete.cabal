@@ -1,0 +1,48 @@
+name:                cabal-delete
+version:             0.0.1
+synopsis:            Command line tool to delete cabal library packages
+
+description:         cabal-delete deletes installed paths of the specified
+                     package and unregisters it if it has no reverse
+                     dependencies and it is not installed by ghc. 
+
+                     cabal-delete checks reverse dependencies and
+                     installed paths from package.conf (< 6.12) or
+                     package.cache (>= 6.12).
+
+                     It cannot delete executable packages.
+
+license:             MIT
+license-file:        LICENSE
+author:              Iku Iwasa
+maintainer:          iku.iwasa@gmail.com
+stability:           Experimental
+category:            Distribution
+build-type:          Simple
+cabal-version:       >= 1.4
+
+executable cabal-delete
+  main-is:           Main.hs
+  hs-source-dirs:    src
+  build-depends:
+    base >= 4 && < 5,
+    deepseq >= 1.1 && < 1.2,
+    directory >= 1.0 && < 1.1,
+    Cabal >= 1.6 && < 1.9,
+    containers >= 0.2 && < 0.4,
+    ghc-paths >= 0.1 && < 0.2,
+    filepath >= 1.1 && < 1.2,
+    monads-tf >= 0.0.0.1 && < 0.2,
+    parsec >= 3.1 && < 3.2,
+    process >= 1.0 && < 1.1,
+    transformers >= 0.1 && < 0.3
+  if impl(ghc >= 6.12)
+    build-depends:
+      bin-package-db
+  ghc-options:        -Wall
+  other-modules:
+    CabalDelete.Types,
+    CabalDelete.Parse,
+    CabalDelete.GhcPkg,
+    CabalDelete.ReverseDepends,
+    CabalDelete.Command
