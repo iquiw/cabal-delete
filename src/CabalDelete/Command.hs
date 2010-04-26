@@ -47,7 +47,7 @@ cmdNoDeps = withRevDepends $ do
     rds <- filterRevDepends (flip (const . null . rdRDepends))
     if null rds
         then msg "All packages has reverse dependencies."
-        else msg "The following packages don't have reverse dependencies."
+        else msg "The following packages have no reverse dependency."
              >> mapM_ (msg . show . toPkgId . rdPkgInfo) rds
 
 cmdCheck :: [String] -> IO ()

@@ -2,12 +2,12 @@ name:                cabal-delete
 version:             0.0.1
 synopsis:            Command line tool to delete cabal library packages
 
-description:         cabal-delete deletes installed paths of the specified
-                     package and unregisters it if it has no reverse
-                     dependencies and it is not installed by ghc. 
+description:         cabal-delete deletes installed directories of
+                     the specified package and unregisters it if it has
+                     no reverse dependency and it is not installed with ghc.
 
                      cabal-delete checks reverse dependencies and
-                     installed paths from package.conf (< 6.12) or
+                     installed directories from package.conf (< 6.12) or
                      package.cache (>= 6.12).
 
                      It cannot delete executable packages.
