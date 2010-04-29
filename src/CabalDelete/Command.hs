@@ -1,6 +1,7 @@
 module CabalDelete.Command
     ( PackageEq
     , cmdList
+    , cmdListMinor
     , cmdNoDeps
     , cmdCheck
     , cmdDelete
@@ -10,7 +11,9 @@ import Control.Monad
 import Control.Monad.Trans
 import Data.Ord
 import Data.List
+import Data.Version (showVersion)
 import Distribution.InstalledPackageInfo
+import Distribution.Package
 import GHC.Paths
 import System.Directory
 import System.FilePath
@@ -33,20 +36,49 @@ instance Show PathResult where
     showsPrec _ PathCommon   = ("[I] " ++)
     showsPrec _ PathGhc      = ("[A] " ++)
 
-cmdList :: PackageEq -> IO ()
-cmdList eq = do
+cmdList :: IO ()
+cmdList = do
+    gs <- getPkgGroups (==.)
+    case gs of
+        [] -> putStrLn "There is no package with multiple versions."
+        _  -> do
+            putStrLn "The following packages have multiple versions."
+            putStrLn ""
+            printPkgVers gs
+
+cmdListMinor :: IO ()
+cmdListMinor = do
+    gs <- getPkgGroups (.==)
+    case gs of
+        [] -> putStrLn "There is no package with multiple minor versions."
+        _  -> do
+            putStrLn "The following packages have multiple minor versions."
+            putStrLn ""
+            printPkgVers gs
+
+getPkgGroups :: PackageEq -> IO [[PackageId]]
+getPkgGroups eq = do
     ps <- getPackages `fmap` ghcPkgList
-    let ps' = [ g | g <- groupBy eq $ sort ps, length g >= 2 ]
-    if null ps'
-        then putStrLn "There is no package with multiple version."
-        else putStrLn "The following packages have multiple versions."
-             >> mapM_ (putStrLn . unwords . map (flip showsPackageId [])) ps'
+    return [ g | g <- groupBy eq $ sort ps, length g >= 2 ]
+
+printPkgVers :: [[PackageId]] -> IO ()
+printPkgVers [] = return ()
+printPkgVers gs = do
+    let ns = align $ map (name . packageName . head) gs
+    mapM_ putStrLn $ zipWith (\n vs -> n ++ ": " ++ vers vs) ns gs
+  where
+    name (PackageName n) = n
+
+    vers = unwords . map (showVersion . packageVersion)
+
+    align xs = let m = maximum $ map length xs
+               in map (take (m + 1) . (++repeat ' ')) xs
 
 cmdNoDeps :: IO ()
 cmdNoDeps = withRevDepends $ do
     rds <- filterRevDepends (flip (const . null . rdRDepends))
     if null rds
-        then msg "All packages has reverse dependencies."
+        then msg "All packages have reverse dependencies."
         else msg "The following packages have no reverse dependency."
              >> mapM_ (msg . show . toPkgId . rdPkgInfo) rds
 

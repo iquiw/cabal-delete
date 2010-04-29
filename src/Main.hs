@@ -7,7 +7,6 @@ import System.Exit
 import System.IO
 
 import CabalDelete.Command
-import CabalDelete.Types
 
 data CDCmd =
       CmdHelp
@@ -22,11 +21,11 @@ options =
     [ Option "h" ["help"] (NoArg CmdHelp)
       "show this help"
     , Option "l" ["multiple-versions"] (NoArg CmdList)
-      "show list of packages that have multiple versions"
+      "list packages with multiple versions"
     , Option "m" ["multiple-minors"] (NoArg CmdListMinor)
-      "show list of packages that have multiple minor versions"
+      "list packages with multiple minor versions"
     , Option "r" ["reverse-depends"] (NoArg CmdNoDeps)
-      "show list of packages that have no reverse dependency"
+      "list packages with no reverse dependency"
     , Option "n" ["dry-run"] (NoArg CmdCheck)
       "check what will happen without actual action"
     ]
@@ -53,8 +52,8 @@ main = do
         _  -> usage $ chop $ concat errs
   where
     doCmd CmdHelp _      = usage []
-    doCmd CmdList _      = cmdList (==.) 
-    doCmd CmdListMinor _ = cmdList (.==)
+    doCmd CmdList _      = cmdList
+    doCmd CmdListMinor _ = cmdListMinor
     doCmd CmdNoDeps _    = cmdNoDeps
     doCmd CmdCheck []    = usage "specify package names"
     doCmd CmdCheck pkgs  = cmdCheck pkgs
