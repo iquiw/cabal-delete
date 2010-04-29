@@ -50,8 +50,12 @@ The following options are available::
     usage: cabal-delete [options] [packages]
 
       -h  --help               show this help
-      -l  --multiple-versions  show list of packages that have multiple versions
-      -m  --multiple-minors    show list of packages that have multiple minor versions
-      -r  --reverse-depends    show list of packages that have no reverse dependency
+      -l  --multiple-versions  list packages with multiple versions
+      -m  --multiple-minors    list packages with multiple minor versions
+      -r  --reverse-depends    list packages with no reverse dependency
       -n  --dry-run            check what will happen without actual action
 
+Bug
+___
+cabal-delete cannot detect ghc installed directory ([A] case) if you use
+different version of ghc-pkg from one which cabal-delete was built by.
