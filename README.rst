@@ -15,7 +15,7 @@ It cannot delete executable packages.
 
 Usage
 -----
-To delete package, type "cabal-delete package".
+To delete `package`, type "cabal-delete `package`".
 
 If the package has no reverse dependency, message like the following is
 displayed::
@@ -29,11 +29,11 @@ displayed::
 
 where the mark means;
 
-- [D] means it will be deleted if 'Y' or just enter key is pressed.
-- [N] means it is found in package.conf (package.cache), but not exist.
-- [I] means it does not contain package name.
+- ``[D]`` means it will be deleted if '`Y`' or just enter key is pressed.
+- ``[N]`` means it is found in package.conf (package.cache), but not exist.
+- ``[I]`` means it does not contain package name.
   So it may be common directory, will be ignored.
-- [A] means it is installed under the directory ghc installed.
+- ``[A]`` means it is installed under the directory ghc installed.
   So delete process will be aborted.
 
 If it has reverse dependencies, message like the following is displayed::
@@ -59,5 +59,6 @@ The following options are available::
 
 Bug
 ___
-cabal-delete cannot detect ghc installed directory ([A] case) if you use
-different version of ghc-pkg from one which cabal-delete was built by.
+If you use different version of ghc from one which cabal-delete was built by
+and the ghc is installed under different directory, then cabal-delete cannot
+detect abort (``[A]``) case.
