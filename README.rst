@@ -54,6 +54,8 @@ The following options are available::
       -m  --multiple-minors    list packages with multiple minor versions
       -r  --reverse-depends    list packages with no reverse dependency
       -n  --dry-run            check what will happen without actual action
+      -v  --version            show version number
+
 
 Bug
 ___

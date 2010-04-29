@@ -1,6 +1,7 @@
 module Main where
 
 import Data.Char
+import Data.Version (showVersion)
 import System.Console.GetOpt
 import System.Environment
 import System.Exit
@@ -8,12 +9,15 @@ import System.IO
 
 import CabalDelete.Command
 
+import Paths_cabal_delete (version)
+
 data CDCmd =
       CmdHelp
     | CmdList
     | CmdListMinor
     | CmdNoDeps
     | CmdCheck
+    | CmdVersion
     deriving (Eq, Show)
 
 options :: [OptDescr CDCmd]
@@ -28,6 +32,8 @@ options =
       "list packages with no reverse dependency"
     , Option "n" ["dry-run"] (NoArg CmdCheck)
       "check what will happen without actual action"
+    , Option "v" ["version"] (NoArg CmdVersion)
+      "show version number"
     ]
 
 usage :: String -> IO ()
@@ -57,5 +63,6 @@ main = do
     doCmd CmdNoDeps _    = cmdNoDeps
     doCmd CmdCheck []    = usage "specify package names"
     doCmd CmdCheck pkgs  = cmdCheck pkgs
+    doCmd CmdVersion _   = putStrLn $ "cabal-delete " ++ showVersion version
 
     chop = reverse . dropWhile isSpace . reverse
