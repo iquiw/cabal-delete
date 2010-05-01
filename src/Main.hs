@@ -41,7 +41,7 @@ options =
 
 usage :: String -> IO ()
 usage err = do
-    let us = "usage: cabal-delete [options] [packages]"
+    let us = "usage: cabal-delete [option] [package..]"
         (msg, out, ecode) = if null err
                             then (unlines [us], stdout, ExitSuccess)
                             else (unlines [us, err], stderr, ExitFailure 1)

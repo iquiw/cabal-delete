@@ -47,9 +47,10 @@ If it has reverse dependencies, message like the following is displayed::
 
 The following options are available::
 
-    usage: cabal-delete [options] [packages]
+    usage: cabal-delete [option] [package...]
 
       -h  --help               show this help
+      -i  --info               show package info
       -l  --multiple-versions  list packages with multiple versions
       -m  --multiple-minors    list packages with multiple minor versions
       -r  --reverse-depends    list packages with no reverse dependency
