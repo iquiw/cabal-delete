@@ -77,10 +77,12 @@ printPkgVers gs = do
 cmdNoDeps :: IO ()
 cmdNoDeps = withRevDepends $ do
     rds <- filterRevDepends (flip (const . null . rdRDepends))
-    if null rds
-        then msg "All packages have reverse dependencies."
-        else msg "The following packages have no reverse dependency."
-             >> mapM_ (msg . show . toPkgId . rdPkgInfo) rds
+    case rds of
+        [] -> msg "All packages have reverse dependencies."
+        _  -> do
+            msg "The following packages have no reverse dependency."
+            msg ""
+            mapM_ (msg . show . toPkgId . rdPkgInfo) rds
 
 cmdCheck :: [String] -> IO ()
 cmdCheck names = do
