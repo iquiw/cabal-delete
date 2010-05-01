@@ -7,6 +7,7 @@ module CabalDelete.ReverseDepends
     , withRevDepends
     , resolveName
     , filterRevDepends
+    , revDependsByKey
     ) where
 
 import Control.DeepSeq
@@ -79,3 +80,8 @@ revDependsById :: PackageId -> RevDependsM [RevDepends]
 revDependsById i = filterRevDepends f
   where
     f k _ = packageId k == i
+
+revDependsByKey :: PkgKey -> RevDependsM [RevDepends]
+revDependsByKey pk = filterRevDepends f
+  where
+    f k _ = pkgKey k == pk

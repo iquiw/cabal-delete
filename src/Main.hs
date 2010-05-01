@@ -13,6 +13,7 @@ import Paths_cabal_delete (version)
 
 data CDCmd =
       CmdHelp
+    | CmdInfo
     | CmdList
     | CmdListMinor
     | CmdNoDeps
@@ -24,6 +25,8 @@ options :: [OptDescr CDCmd]
 options =
     [ Option "h" ["help"] (NoArg CmdHelp)
       "show this help"
+    , Option "i" ["info"] (NoArg CmdInfo)
+      "show package info"
     , Option "l" ["multiple-versions"] (NoArg CmdList)
       "list packages with multiple versions"
     , Option "m" ["multiple-minors"] (NoArg CmdListMinor)
@@ -58,6 +61,8 @@ main = do
         _  -> usage $ chop $ concat errs
   where
     doCmd CmdHelp _      = usage []
+    doCmd CmdInfo []     = usage "specify package names"
+    doCmd CmdInfo pkgs   = cmdInfo pkgs
     doCmd CmdList _      = cmdList
     doCmd CmdListMinor _ = cmdListMinor
     doCmd CmdNoDeps _    = cmdNoDeps

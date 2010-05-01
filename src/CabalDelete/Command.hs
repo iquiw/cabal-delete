@@ -1,5 +1,6 @@
 module CabalDelete.Command
     ( PackageEq
+    , cmdInfo
     , cmdList
     , cmdListMinor
     , cmdNoDeps
@@ -13,15 +14,26 @@ import Data.Ord
 import Data.List
 import Data.Version (showVersion)
 import Distribution.InstalledPackageInfo
+    ( description
+    , depends
+    , haddockHTMLs
+    , importDirs
+    , libraryDirs
+    )
 import Distribution.Package
+    ( PackageId
+    , PackageName(..)
+    , packageName
+    , packageVersion
+    )
 import GHC.Paths
 import System.Directory
 import System.FilePath
-import System.IO
 
 import CabalDelete.GhcPkg
 import CabalDelete.ReverseDepends
 import CabalDelete.Types
+import CabalDelete.Utils
 
 data PathResult =
       PathOK
@@ -35,6 +47,25 @@ instance Show PathResult where
     showsPrec _ PathNotFound = ("[N] " ++)
     showsPrec _ PathCommon   = ("[I] " ++)
     showsPrec _ PathGhc      = ("[A] " ++)
+
+cmdInfo :: [String] -> IO ()
+cmdInfo names = withRevDepends $ forM_ names $ \n -> do
+    rds <- resolveName n
+    case rds of
+        [] -> msg "No package found."
+        _  -> mapM_ printInfo rds
+  where
+    printInfo rd = do
+        let pinfo = rdPkgInfo rd
+            len = 78
+        dps <- mapM revDependsByKey $ depends pinfo
+
+        msg' $ alignDList len "Name:           " [show $ toPkgId pinfo]
+        msg' $ alignDList len "Description:    "
+            (words $ unwords $ lines $ description pinfo)
+        msg' $ alignDList len "Depends:        "
+            (map (show . rdPkgId) $ concat dps)
+        msg  $ alignDList len "ReverseDepends: " (map show $ rdRDepends rd)
 
 cmdList :: IO ()
 cmdList = do
@@ -169,14 +200,3 @@ getDeletePaths rd =
                  | otherwise
                    -> return (PathCommon, p)
 
-askIf :: String -> RevDependsM a -> RevDependsM a -> RevDependsM a
-askIf s thenProc elseProc = do
-    liftIO $ putStr s
-    liftIO $ hFlush stdout
-    ans <- liftIO getLine
-    if ans `elem` ["", "y", "Y"]
-        then thenProc
-        else elseProc
-
-msg :: String -> RevDependsM ()
-msg = liftIO . putStrLn

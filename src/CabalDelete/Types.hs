@@ -4,6 +4,7 @@ module CabalDelete.Types
     , PackageInfo
     , PkgConfList
     , PkgId
+    , PkgKey
     , (==.)
     , (.==)
     , getPackages
@@ -52,10 +53,12 @@ instance Package PkgId where
 instance Show PkgId where
     showsPrec _ (PkgId _ i) = showsPackageId i
   
+type PkgKey = InstalledPackageId
+
 toPkgId :: PackageInfo -> PkgId
 toPkgId = liftM2 PkgId installedPackageId sourcePackageId
 
-pkgKey :: PkgId -> InstalledPackageId
+pkgKey :: PkgId -> PkgKey
 pkgKey (PkgId ipid _) = ipid
 
 getPkgConfs :: PkgConfList -> [FilePath]
@@ -70,10 +73,12 @@ instance Package PkgId where
 instance Show PkgId where
     showsPrec _ (PkgId i) = showsPackageId i
 
+type PkgKey = PackageId
+
 toPkgId :: PackageInfo -> PkgId
 toPkgId = PkgId . package
 
-pkgKey :: PkgId -> PackageId
+pkgKey :: PkgId -> PkgKey
 pkgKey (PkgId i) = i
 
 getPkgConfs :: PkgConfList -> [FilePath]
