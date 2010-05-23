@@ -2,6 +2,9 @@
 cabal-delete README
 ===================
 
+.. contents:: Table of Contents
+.. sectnum::
+
 Summary
 -------
 cabal-delete deletes installed directories of the specified package
@@ -11,11 +14,15 @@ it is not installed with ghc.
 cabal-delete checks reverse dependencies and installed directories
 from package.conf (< 6.12) or package.cache (>= 6.12).
 
-It cannot delete executable packages.
+cabal-delete cannot delete executable packages.
 
 Usage
 -----
+
+Delete packages
+~~~~~~~~~~~~~~~
 To delete `package`, type "cabal-delete `package`".
+You may need `sudo` to delete directories `root` owns.
 
 If the package has no reverse dependency, message like the following is
 displayed::
@@ -45,6 +52,84 @@ If it has reverse dependencies, message like the following is displayed::
     salvia-protocol-1.0.1
 
 
+If `-n` option is specified, cabal-delete will not perform actual operation
+(dry-run mode).
+
+Show package information
+~~~~~~~~~~~~~~~~~~~~~~~~
+To show `package`'s information, type "cabal-delete -i `package`".
+
+This shows name, description, dependencies and reverse dependencies
+like follows::
+
+    $ cabal-delete -i failure  
+    Name:            failure-0.0.0.3
+    Description:     A simple type class for success/failure computations.
+    Depends:         base-4.2.0.1
+    ReverseDepends:  control-monad-failure-0.6.1
+
+    Name:            failure-0.1.0
+    Description:     A simple type class for success/failure computations.
+    Depends:         base-4.2.0.1
+    ReverseDepends:  control-monad-failure-0.7.0
+
+
+Show packages that have multiple versions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To show packages with multiple versions installed,
+type "cabal-delete -l"::
+
+    $ cabal-delete -l     
+    The following packages have multiple versions.
+
+    base                   : 3.0.3.2 4.2.0.1
+    control-monad-failure  : 0.6.1 0.7.0
+    data-accessor          : 0.2.1.2 0.2.1.3
+    data-accessor-template : 0.2.1.3 0.2.1.4
+    dyre                   : 0.8.2 0.8.3
+    extensible-exceptions  : 0.1.1.1 0.1.1.2
+    failure                : 0.0.0.3 0.1.0
+    ...
+
+    
+To show packages with multiple minor versions installed,
+type "cabal-delete -m".
+`i.e.` Packages with same major version and different minor versions
+installed::
+
+    $ cabal-delete -m                    
+    The following packages have multiple minor versions.
+
+    control-monad-failure  : 0.6.1 0.7.0
+    data-accessor          : 0.2.1.2 0.2.1.3
+    data-accessor-template : 0.2.1.3 0.2.1.4
+    dyre                   : 0.8.2 0.8.3
+    extensible-exceptions  : 0.1.1.1 0.1.1.2
+    failure                : 0.0.0.3 0.1.0
+    ...
+
+Show packages that have no reverse dependency
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To show packages that have no reverse dependency, type "cabal-delete -r"::
+
+    $ cabal-delete -r
+    The following packages have no reverse dependency.
+
+    BlazeHtml-0.1
+    Imlib-0.1.2
+    control-monad-failure-0.6.1
+    control-monad-failure-0.7.0
+    criterion-0.5.0.0
+    data-accessor-template-0.2.1.4
+    dph-par-0.4.0
+    dph-seq-0.4.0
+    dyre-0.8.3
+    extensible-exceptions-0.1.1.1
+    ...
+
+
+Options
+-------
 The following options are available::
 
     usage: cabal-delete [option] [package...]
@@ -59,7 +144,7 @@ The following options are available::
 
 
 Bug
-___
-If you use different version of ghc from one which cabal-delete was built by
-and the ghc is installed under different directory, then cabal-delete cannot
-detect abort (``[A]``) case.
+---
+If you use ghc that is installed under different directoy from that of ghc
+which cabal-delete was built by, then cabal-delete cannot detect abort
+(``[A]``) case.
