@@ -45,13 +45,16 @@ showsPackageId (PackageIdentifier (PackageName n) v) =
     (n ++) . ("-" ++) . (showVersion v ++)
 
 #if __GLASGOW_HASKELL__ >= 612
-data PkgId = PkgId InstalledPackageId PackageId deriving (Eq, Ord)
+data PkgId = PkgId InstalledPackageId PackageId deriving Eq
 
 instance Package PkgId where
     packageId (PkgId _ i) = i
 
 instance Show PkgId where
     showsPrec _ (PkgId _ i) = showsPackageId i
+
+instance Ord PkgId where
+    compare (PkgId _ i1) (PkgId _ i2) = compare i1 i2
   
 type PkgKey = InstalledPackageId
 
