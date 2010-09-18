@@ -29,12 +29,14 @@ type PackageEq = PackageId -> PackageId -> Bool
 getPackages :: PkgConfList -> [PackageId]
 getPackages = concatMap snd
 
+-- | returns True if packages' major versions are same.
 (.==) :: PackageEq
-(.==) (PackageIdentifier (PackageName n1) (Version (v1:_) _))
-      (PackageIdentifier (PackageName n2) (Version (v2:_) _))
-    = n1 == n2 && v1 == v2
+(.==) (PackageIdentifier (PackageName n1) (Version (v1:v1':_) _))
+      (PackageIdentifier (PackageName n2) (Version (v2:v2':_) _))
+    = n1 == n2 && v1 == v2 && v1' == v2'
 (.==) _ _ = False
 
+-- | returns True if packages' name are same.
 (==.) :: PackageEq
 (==.) (PackageIdentifier (PackageName n1) _)
       (PackageIdentifier (PackageName n2) _)
