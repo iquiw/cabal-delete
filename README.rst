@@ -100,12 +100,10 @@ installed::
     $ cabal-delete -m                    
     The following packages have multiple minor versions.
 
-    control-monad-failure  : 0.6.1 0.7.0
     data-accessor          : 0.2.1.2 0.2.1.3
     data-accessor-template : 0.2.1.3 0.2.1.4
     dyre                   : 0.8.2 0.8.3
     extensible-exceptions  : 0.1.1.1 0.1.1.2
-    failure                : 0.0.0.3 0.1.0
     ...
 
 Show packages that have no reverse dependency
