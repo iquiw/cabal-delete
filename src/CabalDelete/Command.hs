@@ -9,7 +9,7 @@ module CabalDelete.Command
     ) where
 
 import Control.Monad
-import Control.Monad.Trans
+import Control.Monad.IO.Class
 import Data.Ord
 import Data.List
 import Data.Version (showVersion)

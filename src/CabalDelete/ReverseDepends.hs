@@ -11,7 +11,7 @@ module CabalDelete.ReverseDepends
     ) where
 
 import Control.DeepSeq
-import Control.Monad.Reader
+import Control.Monad.Trans.Reader
 import Data.Map (Map)
 import qualified Data.Map as M
 import Distribution.InstalledPackageInfo

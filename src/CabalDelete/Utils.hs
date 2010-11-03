@@ -5,7 +5,7 @@ module CabalDelete.Utils
     , msg'
     ) where
 
-import Control.Monad.Trans
+import Control.Monad.IO.Class
 import System.IO
 
 alignDList :: Int -> String -> [String] -> String
