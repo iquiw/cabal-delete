@@ -36,7 +36,10 @@ instance EqIC Char where
     (=-=) = (==) `on` toLower
 
 instance EqIC a => EqIC [a] where
-    (=-=) = (and .) . zipWith (=-=)
+    (=-=) [] [] = True
+    (=-=) _  [] = False
+    (=-=) [] _  = False
+    (=-=) (x:xs) (y:ys) = (x =-= y) && xs =-= ys
 
 instance EqIC PackageName where
     (=-=) (PackageName n1) (PackageName n2) = n1 =-= n2
