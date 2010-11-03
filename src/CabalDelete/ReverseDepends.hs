@@ -74,14 +74,14 @@ filterRevDepends f =
 revDependsByName :: PackageName -> RevDependsM [RevDepends]
 revDependsByName n = filterRevDepends f
   where
-    f k _ = n == packageName (packageId k)
+    f k _ = n =-= packageName (packageId k)
 
 revDependsById :: PackageId -> RevDependsM [RevDepends]
 revDependsById i = filterRevDepends f
   where
-    f k _ = packageId k == i
+    f k _ = packageId k =-= i
 
 revDependsByKey :: PkgKey -> RevDependsM [RevDepends]
 revDependsByKey pk = filterRevDepends f
   where
-    f k _ = pkgKey k == pk
+    f k _ = pkgKey k =-= pk
