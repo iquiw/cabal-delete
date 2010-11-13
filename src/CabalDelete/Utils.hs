@@ -17,7 +17,7 @@ alignDList maxlen dt dds = unlines (map unwords $ align m dds [dt])
 
     align _ [] ys         = [reverse ys]
     align n (x:xs) ys =
-        let l = length x
+        let l = length x + 1
         in case () of
             _ | l > m     -> if null ys
                              then [x] : align m xs [sp]
