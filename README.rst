@@ -143,6 +143,9 @@ The following options are available::
 
 Bug
 ---
-If you use ghc that is installed under different directoy from that of ghc
-which cabal-delete was built by, then cabal-delete cannot detect abort
-(``[A]``) case.
+* cabal-delete cannot distinguish if same packages (same version) are installed
+  in both global and user's package databases.
+
+* If you use ghc that is installed under different directoy from that of ghc
+  which cabal-delete was built by, then cabal-delete cannot detect abort
+  (``[A]``) case.
