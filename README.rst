@@ -10,11 +10,11 @@ Summary
 cabal-delete deletes installed directories of the specified package
 and unregisters it if it has no reverse dependency and
 it is not installed with ghc. 
+It cannot delete executable packages.
 
-cabal-delete checks reverse dependencies and installed directories
-from package.conf (< 6.12) or package.cache (>= 6.12).
-
-cabal-delete cannot delete executable packages.
+cabal-delete also has some utility commands to show
+package info, list packages multiple version installed,
+and list packages with no reverse dependency.
 
 Usage
 -----

@@ -15,13 +15,14 @@ import Control.Monad.Trans.Reader
 import Data.Map (Map)
 import qualified Data.Map as M
 import Distribution.InstalledPackageInfo
-#if __GLASGOW_HASKELL__ >= 612
-import Distribution.InstalledPackageInfo.Binary
-#endif
+import Distribution.Simple.Compiler
+import Distribution.Simple.Configure
+import Distribution.Simple.PackageIndex
+import Distribution.Simple.Program
 import Distribution.Package hiding (depends)
+import Distribution.Verbosity
 
 import CabalDelete.Types
-import CabalDelete.GhcPkg
 import CabalDelete.Parse
 
 data RevDepends = RD
@@ -42,21 +43,16 @@ type RevDependsM = ReaderT RevDependsMap IO
 
 withRevDepends :: RevDependsM a -> IO a
 withRevDepends proc = do
-    pl <- ghcPkgList
-    rd <- (RDM . M.unions) `fmap` mapM load (getPkgConfs pl)
+    rd <- RDM `fmap` load
     rd `deepseq` runReaderT proc rd
 
-load :: FilePath -> IO (Map PkgId RevDepends)
-load path = do
-#if __GLASGOW_HASKELL__ >= 612
-    ps <- readBinPackageDB path :: IO [PackageInfo]
-    return $ M.fromList $ r ps
-#else
-    x <- readFile path
-    case x `deepseq` reads x :: [([PackageInfo], String)] of
-        [(ps, _)] -> return $ M.fromList $ r ps
-        _         -> error "Unable to load package.conf"
-#endif
+load :: IO (Map PkgId RevDepends)
+load = do
+    (compiler, pcfg) <- configCompiler (Just GHC) Nothing Nothing
+                                       defaultProgramConfiguration normal
+    mpidx <- getInstalledPackages normal compiler
+                                  [GlobalPackageDB, UserPackageDB] pcfg
+    return $ maybe M.empty (M.fromList . r . allPackages) mpidx
   where
     r ps = [ (toPkgId p, RD p (d (pkgKey $ toPkgId p) ps)) | p <- ps ]
     d i ps = [ toPkgId p | p <- ps, i `elem` depends p ]

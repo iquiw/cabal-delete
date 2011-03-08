@@ -19,11 +19,12 @@ import Control.Monad
 import Data.Char
 import Data.Function
 import Data.Version
-import Distribution.Package
 import Distribution.InstalledPackageInfo
+import Distribution.ModuleName
+import Distribution.Package
 import System.FilePath ((</>))
 
-type PackageInfo = InstalledPackageInfo_ String
+type PackageInfo = InstalledPackageInfo_ ModuleName
 
 type PkgConfList = [(FilePath, [PackageId])]
 
