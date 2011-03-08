@@ -5,54 +5,59 @@ module CabalDelete.Parse
     , parseGhcPkgList
     ) where
 
-import Control.Applicative hiding (many, optional, (<|>))
+import Control.Applicative hiding (many, (<|>))
 import Control.Monad
+import qualified Data.ByteString.Char8 as C
 import Data.List
-import Data.Maybe
 import Data.Version
 import Distribution.Package
-import Text.Parsec
+import Data.Attoparsec (eitherResult)
+import Data.Attoparsec.Char8
 
 import CabalDelete.Types
 
-type P u a = (Stream s m Char) => ParsecT s u m a
+parseGhcPkgList :: String -> Either String PkgConfList
+parseGhcPkgList = eitherResult . flip feed C.empty . parse _ghcPkgList . C.pack
 
-parseGhcPkgList :: String -> Either ParseError PkgConfList
-parseGhcPkgList = runParser (many (try _warnMsg) *> _ghcPkgList) Nothing ""
+_ghcPkgList :: Parser  PkgConfList
+_ghcPkgList = many (try _warnMsg) *> many (liftM2 (,) _pkgConfPath _pkgList)
 
-_warnMsg :: P u ()
-_warnMsg = string "WARNING" *> many (noneOf "\n") *> _eol
+_warnMsg :: Parser ()
+_warnMsg = string (C.pack "WARNING") *> many (notChar '\n') *> _eol
 
-_ghcPkgList :: P (Maybe Version) PkgConfList
-_ghcPkgList = many $ liftM2 (,) _pkgConfPath _pkgList
-
-_pkgConfPath :: P (Maybe Version) FilePath
+_pkgConfPath :: Parser FilePath
 _pkgConfPath = anyChar `manyTill` try (char ':' *> _eol)
 
-_pkgList :: P (Maybe Version) [PackageId]
+_pkgList :: Parser [PackageId]
 _pkgList = concat <$> many (_pkgLine <* _eol) <* optional _eol
 
-_pkgLine :: P (Maybe Version) [PackageId]
+_pkgLine :: Parser [PackageId]
 _pkgLine = many1 (char ' ') *> sepBy p sep
   where
     p = optional (oneOf "({") *> _pkgId <* optional (oneOf ")}")
-    sep = char ',' *> spaces
+    sep = char ',' *> many space
+    oneOf = choice . map char
 
-_eol :: P u ()
+_eol :: Parser ()
 _eol = () <$ (optional (char '\r') >> char '\n')
 
-parsePkgId :: String -> Either ParseError PackageId
-parsePkgId = runParser (_pkgId <* eof) Nothing ""
+parsePkgId :: String -> Either String PackageId
+parsePkgId = eitherResult . flip feed C.empty . parse _pkgId . C.pack
 
-_pkgId :: P (Maybe Version) PackageId
-_pkgId = do
-    cs <- _nameChunk `manyTill` (try _numVer >>= setState . Just)
-    v <- fromJust <$> getState
-    let name = PackageName $ intercalate "-" cs
-    return $ PackageIdentifier name v
+_pkgId :: Parser PackageId
+_pkgId = go []
+  where
+    go cs = do
+        c <- _nameChunk
+        mv <- optional _numVer
+        case mv of
+            Nothing -> go (c:cs)
+            Just v  ->
+                let name = PackageName $ intercalate "-" $ reverse (c:cs)
+                in return $ PackageIdentifier name v
 
-_nameChunk :: P u String
+_nameChunk :: Parser String
 _nameChunk = anyChar `manyTill` char '-'
 
-_numVer :: P u Version
+_numVer :: Parser Version
 _numVer = (flip Version [] . map read) <$> sepBy1 (many1 digit) (char '.')
