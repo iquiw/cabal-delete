@@ -196,7 +196,9 @@ getDeletePaths rd =
                    norm docdir `isInfixOf` p
                    -> return (PathGhc, p)
                  | show (rdPkgId rd) `isInfixOf` takeDirectory p
-                   -> return (PathOK, takeDirectory p)
+                   -> if "html" `isSuffixOf` p
+                          then return (PathOK, takeDirectory p)
+                          else return (PathOK, p)
                  | otherwise
                    -> return (PathCommon, p)
 
