@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 module CabalDelete.Parse
     ( parsePkgId
     , parseGhcPkgList
     ) where
 
 import Control.Applicative hiding (many, (<|>))
-import Control.Monad
 import qualified Data.ByteString.Char8 as C
 import Data.List
 import Data.Version
@@ -19,11 +19,11 @@ import CabalDelete.Types
 parseGhcPkgList :: String -> Either String PkgConfList
 parseGhcPkgList = eitherResult . flip feed C.empty . parse _ghcPkgList . C.pack
 
-_ghcPkgList :: Parser  PkgConfList
-_ghcPkgList = many (try _warnMsg) *> many (liftM2 (,) _pkgConfPath _pkgList)
+_ghcPkgList :: Parser PkgConfList
+_ghcPkgList = many (try _warnMsg) *> many ((,) <$> _pkgConfPath <*> _pkgList)
 
 _warnMsg :: Parser ()
-_warnMsg = string (C.pack "WARNING") *> many (notChar '\n') *> _eol
+_warnMsg = string "WARNING" *> many (notChar '\n') *> _eol
 
 _pkgConfPath :: Parser FilePath
 _pkgConfPath = anyChar `manyTill` try (char ':' *> _eol)
