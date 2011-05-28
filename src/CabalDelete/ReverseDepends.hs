@@ -50,9 +50,13 @@ load :: IO (Map PkgId RevDepends)
 load = do
     (compiler, pcfg) <- configCompiler (Just GHC) Nothing Nothing
                                        defaultProgramConfiguration normal
-    mpidx <- getInstalledPackages normal compiler
+    pidx <- getInstalledPackages normal compiler
                                   [GlobalPackageDB, UserPackageDB] pcfg
-    return $ maybe M.empty (M.fromList . r . allPackages) mpidx
+#if MIN_VERSION_Cabal(1,10,0)
+    return $ M.fromList $ r $ allPackages $ pidx
+#else
+    return $ maybe M.empty (M.fromList . r . allPackages) pidx
+#endif
   where
     r ps = [ (toPkgId p, RD p (d (pkgKey $ toPkgId p) ps)) | p <- ps ]
     d i ps = [ toPkgId p | p <- ps, i `elem` depends p ]
