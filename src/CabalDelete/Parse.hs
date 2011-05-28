@@ -11,7 +11,6 @@ import qualified Data.ByteString.Char8 as C
 import Data.List
 import Data.Version
 import Distribution.Package
-import Data.Attoparsec (eitherResult)
 import Data.Attoparsec.Char8
 
 import CabalDelete.Types
