@@ -52,6 +52,7 @@ If it has reverse dependencies, message like the following is displayed::
     salvia-protocol-1.0.1
 
 
+If `-R` option is specified, dependent packages will be delete recursively.
 If `-n` option is specified, cabal-delete will not perform actual operation
 (dry-run mode).
 
@@ -132,6 +133,7 @@ The following options are available::
 
     usage: cabal-delete [option] [package...]
 
+      -R  --recursive          delete packages recuresively
       -h  --help               show this help
       -i  --info               show package info
       -l  --multiple-versions  list packages with multiple versions
@@ -146,6 +148,26 @@ Bug
 * cabal-delete cannot distinguish if same packages (same version) are installed
   in both global and user's package databases.
 
+
 * If you use ghc that is installed under different directoy from that of ghc
   which cabal-delete was built by, then cabal-delete cannot detect abort
   (``[A]``) case.
+
+TODO
+----
+1. Drop ghc-6.10 support (simplify Types.hs)
+
+  cabal-delete cannot be built by ghc-6.10 since recent attoparsec cannot be
+  compiled with base in ghc-6.10.
+
+2. Refactoring...
+
+3. Do not perform recursive delete if any of dependent packages is ``[A]`` case.
+
+4. `All` answer.
+
+  e.g. "Do you want to proceed? [Y/n/a]"
+  If `a` is entered, do not ask user's answer afterward.
+
+5. `-y` option not to query user's answer (non-interactive mode).
+

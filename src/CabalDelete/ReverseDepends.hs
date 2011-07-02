@@ -4,14 +4,18 @@ module CabalDelete.ReverseDepends
     , RevDepends(rdPkgInfo, rdRDepends)
     , RevDependsM
     , rdPkgId
+    , reload
     , withRevDepends
     , resolveName
     , filterRevDepends
+    , revDependsById
     , revDependsByKey
+    , revDependsList
     ) where
 
-import Control.DeepSeq
-import Control.Monad.Trans.Reader
+import Control.Applicative ((<$>))
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.State
 import Data.Map (Map)
 import qualified Data.Map as M
 import Distribution.InstalledPackageInfo
@@ -35,31 +39,37 @@ rdPkgId = toPkgId . rdPkgInfo
 
 data RevDependsMap = RDM
     { cache :: Map PkgId RevDepends
+    , index :: PackageIndex
     }
 
-instance NFData RevDependsMap
-
-type RevDependsM = ReaderT RevDependsMap IO
+type RevDependsM = StateT RevDependsMap IO
 
 withRevDepends :: RevDependsM a -> IO a
 withRevDepends proc = do
-    rd <- RDM `fmap` load
-    rd `deepseq` runReaderT proc rd
+    rdm <- uncurry RDM <$> load
+    fst <$> runStateT proc rdm
 
-load :: IO (Map PkgId RevDepends)
+load :: IO (Map PkgId RevDepends, PackageIndex)
 load = do
     (compiler, pcfg) <- configCompiler (Just GHC) Nothing Nothing
                                        defaultProgramConfiguration normal
     pidx <- getInstalledPackages normal compiler
                                   [GlobalPackageDB, UserPackageDB] pcfg
 #if MIN_VERSION_Cabal(1,10,0)
-    return $ M.fromList $ r $ allPackages $ pidx
+    return (M.fromList $ r $ allPackages $ pidx, pidx)
 #else
-    return $ maybe M.empty (M.fromList . r . allPackages) pidx
+    case pidx of
+        Just pidx' -> return (M.fromList $ r $ allPackages pidx', pidx')
+        Nothing    -> return (M.empty, fromList [])
 #endif
   where
     r ps = [ (toPkgId p, RD p (d (pkgKey $ toPkgId p) ps)) | p <- ps ]
     d i ps = [ toPkgId p | p <- ps, i `elem` depends p ]
+
+reload :: RevDependsM ()
+reload = do
+    rdm <- liftIO $ uncurry RDM <$> load
+    put rdm
 
 resolveName :: String -> RevDependsM [RevDepends]
 resolveName name =
@@ -69,7 +79,7 @@ resolveName name =
 
 filterRevDepends :: (PkgId -> RevDepends -> Bool) -> RevDependsM [RevDepends]
 filterRevDepends f =
-    (map snd . M.toList . M.filterWithKey f . cache) `fmap` ask
+    (map snd . M.toList . M.filterWithKey f . cache) <$> get
 
 revDependsByName :: PackageName -> RevDependsM [RevDepends]
 revDependsByName n = filterRevDepends f
@@ -85,3 +95,9 @@ revDependsByKey :: PkgKey -> RevDependsM [RevDepends]
 revDependsByKey pk = filterRevDepends f
   where
     f k _ = pkgKey k =-= pk
+
+revDependsList :: [PkgId] -> RevDependsM [PkgId]
+revDependsList pis = do
+    pidx <- index <$> get
+    let m = reverseDependencyClosure pidx (map pkgKey pis)
+    return $ map toPkgId $ topologicalOrder $ fromList m

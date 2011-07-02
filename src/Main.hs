@@ -1,6 +1,8 @@
 module Main where
 
 import Data.Char
+import Data.List (sort)
+import Control.Applicative ((<$>))
 import Data.Version (showVersion)
 import System.Console.GetOpt
 import System.Environment
@@ -19,11 +21,14 @@ data CDCmd =
     | CmdNoDeps
     | CmdCheck
     | CmdVersion
-    deriving (Eq, Show)
+    | OptRecursive
+    deriving (Eq, Show, Ord)
 
 options :: [OptDescr CDCmd]
 options =
-    [ Option "h" ["help"] (NoArg CmdHelp)
+    [ Option "R" ["recursive"] (NoArg OptRecursive)
+      "delete packages recuresively"
+    , Option "h" ["help"] (NoArg CmdHelp)
       "show this help"
     , Option "i" ["info"] (NoArg CmdInfo)
       "show package info"
@@ -50,24 +55,29 @@ usage err = do
 
 main :: IO ()
 main = do
-    (opts, pkgs ,errs) <- getOpt RequireOrder options `fmap` getArgs
+    (opts, pkgs ,errs) <- getOpt RequireOrder options <$> getArgs
     case errs of
-        [] -> case opts of
-            [] | null pkgs           -> usage "specify option or package names"
-               | otherwise           -> cmdDelete pkgs
-            [cmd]                    -> doCmd cmd pkgs 
-            _  | CmdHelp `elem` opts -> doCmd CmdHelp []
-               | otherwise           -> usage "specify exactly one option"
+        [] -> case sort opts of
+            [] | null pkgs            -> usage "specify option or package names"
+               | otherwise            -> cmdDelete False pkgs
+            [cmd]                     -> doCmd cmd pkgs 
+            [CmdCheck, OptRecursive]
+                | null pkgs           -> usage "specify package names"
+                | otherwise           -> cmdCheck True pkgs
+            _  | CmdHelp `elem` opts  -> doCmd CmdHelp []
+               | otherwise            -> usage "specify exactly one option"
         _  -> usage $ chop $ concat errs
   where
-    doCmd CmdHelp _      = usage []
-    doCmd CmdInfo []     = usage "specify package names"
-    doCmd CmdInfo pkgs   = cmdInfo pkgs
-    doCmd CmdList _      = cmdList
-    doCmd CmdListMinor _ = cmdListMinor
-    doCmd CmdNoDeps _    = cmdNoDeps
-    doCmd CmdCheck []    = usage "specify package names"
-    doCmd CmdCheck pkgs  = cmdCheck pkgs
-    doCmd CmdVersion _   = putStrLn $ "cabal-delete " ++ showVersion version
+    doCmd CmdHelp _         = usage []
+    doCmd CmdInfo []        = usage "specify package names"
+    doCmd CmdInfo pkgs      = cmdInfo pkgs
+    doCmd CmdList _         = cmdList
+    doCmd CmdListMinor _    = cmdListMinor
+    doCmd CmdNoDeps _       = cmdNoDeps
+    doCmd CmdCheck []       = usage "specify package names"
+    doCmd CmdCheck pkgs     = cmdCheck False pkgs
+    doCmd OptRecursive []   = usage "specify package names"
+    doCmd OptRecursive pkgs = cmdDelete True pkgs
+    doCmd CmdVersion _      = putStrLn $ "cabal-delete " ++ showVersion version
 
     chop = reverse . dropWhile isSpace . reverse

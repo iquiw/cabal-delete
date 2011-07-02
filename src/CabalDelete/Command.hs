@@ -8,6 +8,7 @@ module CabalDelete.Command
     , cmdDelete
     ) where
 
+import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Ord
@@ -22,6 +23,7 @@ import Distribution.InstalledPackageInfo
     )
 import Distribution.Package
     ( PackageId
+    , Package(..)
     , PackageName(..)
     , packageName
     , packageVersion
@@ -89,7 +91,7 @@ cmdListMinor = do
 
 getPkgGroups :: PackageEq -> IO [[PackageId]]
 getPkgGroups eq = do
-    ps <- getPackages `fmap` ghcPkgList
+    ps <- getPackages <$> ghcPkgList
     return [ g | g <- groupBy eq $ sort ps, length g >= 2 ]
 
 printPkgVers :: [[PackageId]] -> IO ()
@@ -115,17 +117,44 @@ cmdNoDeps = withRevDepends $ do
             msg ""
             mapM_ (msg . show . toPkgId . rdPkgInfo) rds
 
-cmdCheck :: [String] -> IO ()
-cmdCheck names = do
+cmdCheck :: Bool -> [String] -> IO ()
+cmdCheck rec names = do
     putStrLn "=== CHECK MODE. No package will be deleted actually. ==="
-    withRevDepends $ forM_ names $ flip checkWith (deleteProc False)
+    withRevDepends $ forM_ names $ flip checkWith (deleteProc False rec)
 
-cmdDelete :: [String] -> IO ()
-cmdDelete names =
-    withRevDepends $ forM_ names $ flip checkWith (deleteProc True)
+cmdDelete :: Bool -> [String] -> IO ()
+cmdDelete rec names =
+    withRevDepends $ forM_ names $ flip checkWith (deleteProc True rec)
 
-deleteProc :: Bool -> RevDepends -> RevDependsM ()
-deleteProc b rd =
+
+deleteProc :: Bool          -- ^ Actually delete or not
+              -> Bool       -- ^ Recursive or not
+              -> RevDepends -- ^ Reverse depends data
+              -> RevDependsM ()
+deleteProc del False rd = deleteOne del rd >> return ()
+deleteProc del True rd  = do
+    pis <- revDependsList $ rdPkgId rd : rdRDepends rd
+    msg "=== RECURSIVE MODE. The following packages will be deleted recursively. === "
+    mapM_ (msg . show) pis
+    askIf "Do you want to proceed? [Y/n] "
+          (proceed $ map packageId pis)
+          (return ())
+  where
+    proceed []     = return ()
+    proceed (i:is) = do
+        rds <- revDependsById i
+        case rds of
+            [rd'] -> do
+                b <- deleteOne del rd'
+                when b $ do
+                    reload
+                    proceed is
+            _     ->
+                error $ "Not Supported: mutilple packages with same version: "
+                      ++ showsPackageId i []
+
+deleteOne :: Bool -> RevDepends -> RevDependsM Bool
+deleteOne del rd =
     case rdRDepends rd of
         [] -> do
             paths <- liftIO $ getDeletePaths rd
@@ -134,21 +163,23 @@ deleteProc b rd =
                 _  -> do
                     msg "The following directories will be processed."
                     msg "    D: Delete, N: NotFound, I: Ignore, A: Abort"
-            abort <- or `fmap` mapM msgPR paths
-            when b $
-                if abort
-                then msg "Aborted."
-                else askIf ("Do you want to delete "
-                            ++ show (rdPkgId rd)
-                            ++ " ? [Y/n] ")
-                     (liftIO $ do
-                           mapM_ deletePath paths
-                           unregisterPackage $ rdPkgId rd
-                           putStrLn $ show (rdPkgId rd) ++ " was deleted.")
-                     (msg "Canceled.")
+            abort <- or <$> mapM msgPR paths
+            case () of
+                _ | not del   -> return False
+                  | abort     -> msg "Aborted." >> return False
+                  | otherwise ->
+                      askIf ("Do you want to delete "
+                            ++ show (rdPkgId rd) ++ " ? [Y/n] ")
+                            (liftIO $ do
+                                mapM_ deletePath paths
+                                unregisterPackage $ rdPkgId rd
+                                putStrLn $ show (rdPkgId rd) ++ " was deleted."
+                                return True)
+                            (msg "Canceled." >> return False)
         ds -> do
             msg $ "The follwoing packages depend on " ++ show (rdPkgId rd)
             mapM_ (msg . show) ds
+            return False
   where
     msgPR (r, p) = msg (show r ++ p)
                    >> if r == PathGhc then return True else return False
