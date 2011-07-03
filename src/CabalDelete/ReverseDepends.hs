@@ -63,7 +63,7 @@ load = do
         Nothing    -> return (M.empty, fromList [])
 #endif
   where
-    r ps = [ (toPkgId p, RD p (d (pkgKey $ toPkgId p) ps)) | p <- ps ]
+    r ps = [ (toPkgId p, RD p (d (installedPackageId p) ps)) | p <- ps ]
     d i ps = [ toPkgId p | p <- ps, i `elem` depends p ]
 
 reload :: RevDependsM ()
@@ -91,13 +91,13 @@ revDependsById i = filterRevDepends f
   where
     f k _ = packageId k =-= i
 
-revDependsByKey :: PkgKey -> RevDependsM [RevDepends]
+revDependsByKey :: InstalledPackageId -> RevDependsM [RevDepends]
 revDependsByKey pk = filterRevDepends f
   where
-    f k _ = pkgKey k =-= pk
+    f k _ = piInstalledId k =-= pk
 
 revDependsList :: [PkgId] -> RevDependsM [PkgId]
 revDependsList pis = do
     pidx <- index <$> get
-    let m = reverseDependencyClosure pidx (map pkgKey pis)
+    let m = reverseDependencyClosure pidx (map piInstalledId pis)
     return $ map toPkgId $ topologicalOrder $ fromList m

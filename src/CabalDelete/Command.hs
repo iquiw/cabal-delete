@@ -91,7 +91,7 @@ cmdListMinor = do
 
 getPkgGroups :: PackageEq -> IO [[PackageId]]
 getPkgGroups eq = do
-    ps <- getPackages <$> ghcPkgList
+    ps <- concatMap snd <$> ghcPkgList
     return [ g | g <- groupBy eq $ sort ps, length g >= 2 ]
 
 printPkgVers :: [[PackageId]] -> IO ()

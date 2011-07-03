@@ -1,6 +1,6 @@
-===================
-cabal-delete README
-===================
+=====================
+ cabal-delete README
+=====================
 
 .. contents:: Table of Contents
 .. sectnum::
@@ -27,12 +27,12 @@ You may need `sudo` to delete directories `root` owns.
 If the package has no reverse dependency, message like the following is
 displayed::
 
-    $ cabal-delete primitive-0.3
+    $ cabal-delete ghc-paths
     The following directories will be processed.
         D: Delete, N: NotFound, I: Ignore, A: Abort
-    [D] /usr/local/ghc/pkg/lib/primitive-0.3
-    [D] /usr/local/ghc/pkg/share/doc/primitive-0.3
-    Do you want to delete primitive-0.3 ? [Y/n] 
+    [D] /usr/local/ghc/pkg/lib/ghc-paths-0.1.0.8/ghc-7.0.4
+    [D] /usr/local/ghc/pkg/share/doc/ghc-paths-0.1.0.8
+    Do you want to delete ghc-paths-0.1.0.8 ? [Y/n]
 
 where the mark means;
 
@@ -53,6 +53,7 @@ If it has reverse dependencies, message like the following is displayed::
 
 
 If `-R` option is specified, dependent packages will be delete recursively.
+
 If `-n` option is specified, cabal-delete will not perform actual operation
 (dry-run mode).
 
@@ -61,7 +62,7 @@ Show package information
 To show `package`'s information, type "cabal-delete -i `package`".
 
 This shows name, description, dependencies and reverse dependencies
-like follows::
+as follows::
 
     $ cabal-delete -i failure  
     Name:            failure-0.0.0.3
@@ -155,19 +156,14 @@ Bug
 
 TODO
 ----
-1. Drop ghc-6.10 support (simplify Types.hs)
+1. Refactoring...
 
-  cabal-delete cannot be built by ghc-6.10 since recent attoparsec cannot be
-  compiled with base in ghc-6.10.
+2. Do not perform recursive delete if any of dependent packages is ``[A]`` case.
 
-2. Refactoring...
-
-3. Do not perform recursive delete if any of dependent packages is ``[A]`` case.
-
-4. `All` answer.
+3. `All` answer.
 
   e.g. "Do you want to proceed? [Y/n/a]"
   If `a` is entered, do not ask user's answer afterward.
 
-5. `-y` option not to query user's answer (non-interactive mode).
+4. `-y` option not to query user's answer (non-interactive mode).
 
