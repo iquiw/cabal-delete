@@ -31,12 +31,12 @@ executable cabal-delete
   build-depends:
     base >= 4.2 && < 5,
     bytestring,
-    Cabal >= 1.6 && < 1.11,
+    Cabal >= 1.6 && < 1.15,
     containers,
     directory,
     filepath,
     process,
-    attoparsec >= 0.8.5.1,
+    attoparsec >= 0.10.0.0,
     ghc-paths,
     transformers >= 0.2 && < 0.3
   ghc-options:        -Wall

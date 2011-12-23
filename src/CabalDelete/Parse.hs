@@ -6,7 +6,7 @@ module CabalDelete.Parse
     , parseGhcPkgList
     ) where
 
-import Control.Applicative hiding (many, (<|>))
+import Control.Applicative
 import qualified Data.ByteString.Char8 as C
 import Data.List
 import Data.Version
