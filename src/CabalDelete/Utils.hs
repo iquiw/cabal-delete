@@ -5,8 +5,13 @@ module CabalDelete.Utils
     , msg'
     ) where
 
-import Control.Monad.IO.Class
-import System.IO
+import Control.Applicative ((<$>))
+import Control.Monad.IO.Class (MonadIO(), liftIO)
+import Control.Monad.Trans.State (get, modify)
+import Data.Char (toLower)
+import System.IO (hFlush, stdout)
+
+import CabalDelete.Types
 
 alignDList :: Int -> String -> [String] -> String
 alignDList maxlen dt dds = unlines (map unwords $ align m dds [dt])
@@ -25,14 +30,25 @@ alignDList maxlen dt dds = unlines (map unwords $ align m dds [dt])
               | l > n     -> reverse ys : align (m-l) xs [x, sp]
               | otherwise -> align (n-l) xs (x:ys)
 
-askIf :: (MonadIO m) => String -> m a -> m a -> m a
+askIf :: (Functor m, MonadIO m) => String -> CDM m a -> CDM m a -> CDM m a
 askIf s thenProc elseProc = do
-    liftIO $ putStr s
-    liftIO $ hFlush stdout
-    ans <- liftIO getLine
-    if ans `elem` ["", "y", "Y"]
-        then thenProc
-        else elseProc
+    y <- yesToAll <$> get
+    if y then liftIO (query >> putStrLn "A") >> thenProc else qandgo
+  where
+    qandgo = do
+        ans <- liftIO getAns
+        case ans of
+            "y" -> thenProc
+            "n" -> elseProc
+            "a" -> modify (\x -> x { yesToAll = True }) >> thenProc
+            _   -> qandgo
+
+    query = do
+        putStr s
+        putStr " [Y]es, [N]o, [A]ll: "
+        hFlush stdout
+
+    getAns = query >> map toLower <$> getLine
 
 msg :: (MonadIO m) => String -> m ()
 msg = liftIO . putStrLn

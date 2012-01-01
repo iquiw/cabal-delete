@@ -32,7 +32,7 @@ displayed::
         D: Delete, N: NotFound, I: Ignore, A: Abort
     [D] /usr/local/ghc/pkg/lib/ghc-paths-0.1.0.8/ghc-7.0.4
     [D] /usr/local/ghc/pkg/share/doc/ghc-paths-0.1.0.8
-    Do you want to delete ghc-paths-0.1.0.8 ? [Y/n]
+    Do you want to delete ghc-paths-0.1.0.8 ? [Y]es, [N]o, [A]ll: 
 
 where the mark means;
 
@@ -160,10 +160,7 @@ TODO
 
 2. Do not perform recursive delete if any of dependent packages is ``[A]`` case.
 
-3. `All` answer.
+3. `-y` option not to query user's answer (non-interactive mode).
 
-  e.g. "Do you want to proceed? [Y/n/a]"
-  If `a` is entered, do not ask user's answer afterward.
-
-4. `-y` option not to query user's answer (non-interactive mode).
+4. Do not delete document directory if the library is installed for other GHC version also.
 

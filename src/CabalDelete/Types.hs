@@ -1,7 +1,10 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module CabalDelete.Types 
-    ( PackageEq
-    , PackageInfo
+    ( CDCmd(..)
+    , CDConfig(..)
+    , CDM
+    , runCDM
+    , PackageEq
     , PkgConfList
     , PkgId(..)
     , (=-=)
@@ -11,15 +14,42 @@ module CabalDelete.Types
     , showsPackageId
     ) where
 
-import Control.Monad
-import Data.Char
-import Data.Function
-import Data.Version
+import Control.Monad (liftM2)
+import Control.Monad.Trans.State (StateT, evalStateT)
+import Data.Char (toLower)
+import Data.Function (on)
+import Data.Version (Version(..), showVersion)
 import Distribution.InstalledPackageInfo
-import Distribution.ModuleName
+    (InstalledPackageInfo, installedPackageId, sourcePackageId)
 import Distribution.Package
+    ( InstalledPackageId(..)
+    , Package(..)
+    , PackageId
+    , PackageIdentifier(..)
+    , PackageName(..)
+    )
 
-type PackageInfo = InstalledPackageInfo_ ModuleName
+data CDCmd
+    = CmdHelp
+    | CmdInfo
+    | CmdList
+    | CmdDelete
+    | CmdNoDeps
+    | CmdVersion
+    deriving (Eq, Show, Ord)
+
+data CDConfig = CDConfig
+    { cmd       :: CDCmd
+    , dryRun    :: Bool
+    , minorOnly :: Bool
+    , recursive :: Bool
+    , yesToAll  :: Bool
+    }
+
+type CDM m = StateT CDConfig m
+
+runCDM :: (Monad m) => CDM m a -> CDConfig -> m a
+runCDM = evalStateT
 
 type PkgConfList = [(FilePath, [PackageId])]
 
@@ -78,5 +108,5 @@ showsPackageId :: PackageId -> ShowS
 showsPackageId (PackageIdentifier (PackageName n) v) =
     (n ++) . ("-" ++) . (showVersion v ++)
 
-toPkgId :: PackageInfo -> PkgId
+toPkgId :: InstalledPackageInfo -> PkgId
 toPkgId = liftM2 PkgId installedPackageId sourcePackageId
