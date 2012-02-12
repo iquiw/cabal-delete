@@ -9,7 +9,7 @@ Summary
 -------
 cabal-delete deletes installed directories of the specified package
 and unregisters it if it has no reverse dependency and
-it is not installed with ghc. 
+it is not installed with ghc.
 It cannot delete executable packages.
 
 cabal-delete also has some utility commands to show
@@ -32,7 +32,7 @@ displayed::
         D: Delete, N: NotFound, I: Ignore, A: Abort
     [D] /usr/local/ghc/pkg/lib/ghc-paths-0.1.0.8/ghc-7.0.4
     [D] /usr/local/ghc/pkg/share/doc/ghc-paths-0.1.0.8
-    Do you want to delete ghc-paths-0.1.0.8 ? [Y]es, [N]o, [A]ll: 
+    Do you want to delete ghc-paths-0.1.0.8 ? [Y]es, [N]o, [A]ll:
 
 where the mark means;
 
@@ -64,7 +64,7 @@ To show `package`'s information, type "cabal-delete -i `package`".
 This shows name, description, dependencies and reverse dependencies
 as follows::
 
-    $ cabal-delete -i failure  
+    $ cabal-delete -i failure
     Name:            failure-0.0.0.3
     Description:     A simple type class for success/failure computations.
     Depends:         base-4.2.0.1
@@ -81,7 +81,7 @@ Show packages that have multiple versions
 To show packages with multiple versions installed,
 type "cabal-delete -l"::
 
-    $ cabal-delete -l     
+    $ cabal-delete -l
     The following packages have multiple versions.
 
     base                   : 3.0.3.2 4.2.0.1
@@ -93,13 +93,13 @@ type "cabal-delete -l"::
     failure                : 0.0.0.3 0.1.0
     ...
 
-    
+
 To show packages with multiple minor versions installed,
 type "cabal-delete -m".
 `i.e.` Packages with same major version and different minor versions
 installed::
 
-    $ cabal-delete -m                    
+    $ cabal-delete -m
     The following packages have multiple minor versions.
 
     data-accessor          : 0.2.1.2 0.2.1.3
@@ -149,10 +149,6 @@ Bug
 * cabal-delete cannot distinguish if same packages (same version) are installed
   in both global and user's package databases.
 
-
-* If you use ghc that is installed under different directoy from that of ghc
-  which cabal-delete was built by, then cabal-delete cannot detect abort
-  (``[A]``) case.
 
 TODO
 ----
