@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module CabalDelete.Types 
+module CabalDelete.Types
     ( CDCmd(..)
     , CDConfig(..)
     , CDM
@@ -41,6 +41,7 @@ data CDCmd
 data CDConfig = CDConfig
     { cmd       :: CDCmd
     , dryRun    :: Bool
+    , ghcLibdir :: FilePath
     , minorOnly :: Bool
     , recursive :: Bool
     , yesToAll  :: Bool

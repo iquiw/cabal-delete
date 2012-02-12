@@ -5,6 +5,7 @@ module CabalDelete
 
 import Control.Monad (foldM)
 import Data.Char (isSpace)
+import qualified GHC.Paths (libdir)
 import System.Console.GetOpt
     (ArgDescr(..), ArgOrder(..), OptDescr(..), usageInfo, getOpt)
 import System.Exit (ExitCode(..), exitWith)
@@ -18,6 +19,7 @@ defaultCfg :: CDConfig
 defaultCfg = CDConfig
     { cmd       = CmdDelete
     , dryRun    = False
+    , ghcLibdir = GHC.Paths.libdir
     , minorOnly = False
     , recursive = False
     , yesToAll  = False

@@ -1,11 +1,13 @@
 module CabalDelete.Utils
     ( alignDList
     , askIf
+    , chomp
     , msg
     , msg'
     ) where
 
 import Control.Applicative ((<$>))
+import Control.Monad (liftM2)
 import Control.Monad.IO.Class (MonadIO(), liftIO)
 import Control.Monad.Trans.State (get, modify)
 import Data.Char (toLower)
@@ -55,3 +57,6 @@ msg = liftIO . putStrLn
 
 msg' :: (MonadIO m) => String -> m ()
 msg' = liftIO . putStr
+
+chomp :: String -> String
+chomp = takeWhile $ liftM2 (&&) (/= '\r') (/= '\n')

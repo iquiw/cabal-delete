@@ -7,9 +7,9 @@ module CabalDelete.Command
     ) where
 
 import Control.Applicative ((<$>))
-import Control.Monad (forM_, when)
+import Control.Monad (forM_, void, when)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.State (get)
+import Control.Monad.Trans.State (get, modify)
 import Control.Monad.IO.Class (liftIO)
 import Data.Ord (comparing)
 import Data.List (groupBy, sort, sortBy, nub, isInfixOf, isPrefixOf, isSuffixOf)
@@ -27,7 +27,7 @@ import Distribution.Package
     , packageName
     , packageVersion
     )
-import GHC.Paths (docdir, libdir)
+import GHC.Paths (docdir)
 import System.Directory (doesDirectoryExist, removeDirectoryRecursive)
 import System.FilePath (normalise, takeDirectory)
 
@@ -74,12 +74,12 @@ cmdInfo names = lift $ forM_ names (\n -> do
 cmdList :: Command IO
 cmdList _ = do
     b <- minorOnly <$> get
-    let m = if b then "minor" else ""
+    let m = if b then " minor " else " "
     gs <- getPkgGroups (if b then (.==) else (==.))
     case gs of
-        [] -> msg $ "There is no package with multiple " ++ m ++ " versions."
+        [] -> msg $ "There is no package with multiple" ++ m ++ "versions."
         _  -> do
-            msg $ "The following packages have multiple " ++ m ++ " versions."
+            msg $ "The following packages have multiple" ++ m ++ "versions."
             msg ""
             lift $ printPkgVers gs
   where
@@ -111,6 +111,8 @@ cmdNoDeps _ = do
 
 cmdDelete :: Command RevDependsM
 cmdDelete names = do
+    dir <- liftIO getLibDir
+    modify (\x -> x { ghcLibdir = dir })
     n <- dryRun <$> get
     when n $ msg "=== CHECK MODE. No package will be deleted actually. ==="
     forM_ names $ flip checkWith deleteProc
@@ -127,7 +129,7 @@ deleteProc rd  = do
             askIf "Do you want to proceed?"
                 (proceed $ map packageId pis)
                 (return ())
-        else deleteOne rd >> return ()
+        else void (deleteOne rd)
   where
     proceed []     = return ()
     proceed (i:is) = do
@@ -145,9 +147,10 @@ deleteProc rd  = do
 deleteOne :: RevDepends -> CDM RevDependsM Bool
 deleteOne rd = do
     del <- not . dryRun <$> get
+    libdir <- ghcLibdir <$> get
     case rdRDepends rd of
         [] -> do
-            paths <- liftIO $ getDeletePaths rd
+            paths <- liftIO $ getDeletePaths libdir rd
             case paths of
                 [] -> msg "No delete path found."
                 _  -> do
@@ -199,8 +202,8 @@ deletePath (PathGhc, p)
 deletePath (PathCommon, p) =
     putStrLn $ "Directory " ++ p ++ " does not contain package name."
 
-getDeletePaths :: RevDepends -> IO [(PathResult, FilePath)]
-getDeletePaths rd = 
+getDeletePaths :: String -> RevDepends -> IO [(PathResult, FilePath)]
+getDeletePaths libdir rd =
     let funcs = [importDirs, libraryDirs, haddockHTMLs]
         paths = map norm $ nub $ concatMap ($ rdPkgInfo rd) funcs
     in mapM checkPath paths
@@ -224,4 +227,3 @@ getDeletePaths rd =
                           else return (PathOK, p)
                  | otherwise
                    -> return (PathCommon, p)
-
