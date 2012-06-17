@@ -38,7 +38,7 @@ executable cabal-delete
     process,
     attoparsec >= 0.10.0.0,
     ghc-paths,
-    transformers >= 0.2 && < 0.3
+    transformers >= 0.2 && < 0.4
   ghc-options:        -Wall
   other-modules:
     CabalDelete
