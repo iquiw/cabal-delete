@@ -31,7 +31,7 @@ executable cabal-delete
   build-depends:
     base >= 4.2 && < 5,
     bytestring,
-    Cabal >= 1.6 && < 1.15,
+    Cabal >= 1.6 && < 1.17,
     containers,
     directory,
     filepath,
