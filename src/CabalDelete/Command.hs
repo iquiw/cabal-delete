@@ -7,7 +7,7 @@ module CabalDelete.Command
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Arrow (first, second)
-import Control.Monad (forM_, void, when)
+import Control.Monad (filterM, forM_, void, when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (get, modify)
 import Control.Monad.IO.Class (liftIO)
@@ -34,9 +34,10 @@ import System.Directory
     , getDirectoryContents
     , removeDirectoryRecursive
     )
-import System.FilePath (normalise, takeDirectory)
+import System.FilePath ((</>), normalise, takeDirectory)
 
 import CabalDelete.GhcPkg
+import CabalDelete.Parse
 import CabalDelete.ReverseDepends
 import CabalDelete.Types
 import CabalDelete.Utils
@@ -218,7 +219,7 @@ getDeletePaths libdir rd = do
         ldirs = (++) <$> libraryDirs <*> importDirs $ pinfo
     lpaths <- mapM (checkPath . norm) $ nub $ sort ldirs
     hpaths <- mapM (checkPath . norm) $ haddockHTMLs pinfo
-    noother <- and <$> mapM noOtherFiles lpaths
+    noother <- and <$> mapM noOtherVer lpaths
     if noother
         then return $ map (second takeDirectory) lpaths ++ hpaths
         else return $ lpaths ++ map ignore hpaths
@@ -244,9 +245,14 @@ getDeletePaths libdir rd = do
                  | otherwise
                    -> return (PathCommon, p)
 
-    noOtherFiles (PathOK, p) = do
-        l <- length <$> getDirectoryContents (takeDirectory p)
-        return $ l == 3 -- == length [".", "..", thisver]
-    noOtherFiles _ = return True
+    noOtherVer (PathOK, p) = do
+        fs <- filter isGHC <$> getDirectoryContents (takeDirectory p)
+        l <- length <$> filterM (doesDirectoryExist . (takeDirectory p </>)) fs
+        return $ l == 1
+    noOtherVer _ = return True
+
+    isGHC f = case parsePkgId f of
+        Right i -> packageName i == PackageName "ghc"
+        Left _  -> False
 
     ignore = first (const PathIgnore)
