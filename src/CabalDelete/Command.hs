@@ -1,6 +1,5 @@
 module CabalDelete.Command
-    ( PackageEq
-    , cmdDelete
+    ( cmdDelete
     , cmdInfo
     , cmdList
     , cmdNoDeps
@@ -12,6 +11,7 @@ import Control.Monad (forM_, void, when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (get, modify)
 import Control.Monad.IO.Class (liftIO)
+import Data.Function (on)
 import Data.Ord (comparing)
 import Data.List (groupBy, sort, sortBy, nub, isInfixOf, isPrefixOf, isSuffixOf)
 import Data.Version (showVersion)
@@ -78,7 +78,7 @@ cmdList :: Command IO
 cmdList _ = do
     b <- minorOnly <$> get
     let m = if b then " minor " else " "
-    gs <- getPkgGroups (if b then (.==) else (==.))
+    gs <- getPkgGroups (if b then (.==) else (=-=) `on` packageName)
     case gs of
         [] -> msg $ "There is no package with multiple" ++ m ++ "versions."
         _  -> do

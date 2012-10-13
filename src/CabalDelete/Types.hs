@@ -4,11 +4,9 @@ module CabalDelete.Types
     , CDConfig(..)
     , CDM
     , runCDM
-    , PackageEq
     , PkgConfList
     , PkgId(..)
     , (=-=)
-    , (==.)
     , (.==)
     , toPkgId
     , showsPackageId
@@ -54,8 +52,6 @@ runCDM = evalStateT
 
 type PkgConfList = [(FilePath, [PackageId])]
 
-type PackageEq = PackageId -> PackageId -> Bool
-
 class EqIC a where
     (=-=) :: a -> a -> Bool
 
@@ -90,17 +86,11 @@ instance Ord PkgId where
     compare (PkgId _ si1) (PkgId _ si2) = compare si1 si2
 
 -- | returns True if packages' major versions are same.
-(.==) :: PackageEq
+(.==) :: PackageId -> PackageId -> Bool
 (.==) (PackageIdentifier (PackageName n1) (Version (v1:v1':_) _))
       (PackageIdentifier (PackageName n2) (Version (v2:v2':_) _))
     = n1 =-= n2 && v1 == v2 && v1' == v2'
 (.==) _ _ = False
-
--- | returns True if packages' name are same.
-(==.) :: PackageEq
-(==.) (PackageIdentifier (PackageName n1) _)
-      (PackageIdentifier (PackageName n2) _)
-    = n1 =-= n2
 
 showsPackageId :: PackageId -> ShowS
 showsPackageId (PackageIdentifier (PackageName n) v) =
