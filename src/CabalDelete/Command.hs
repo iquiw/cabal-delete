@@ -69,7 +69,10 @@ cmdInfo names = lift $ forM_ names (\n -> do
             (words $ unwords $ lines $ description pinfo)
         msg' $ alignDList len "Depends:        "
             (map (show . rdPkgId) $ concat dps)
-        msg  $ alignDList len "ReverseDepends: " (map show $ rdRDepends rd)
+        msg' $ alignDList len "ReverseDepends: " (map show $ rdRDepends rd)
+        msg' $ alignDList len "LibraryDirs:    " (libraryDirs pinfo)
+        msg' $ alignDList len "ImportDirs:     " (importDirs pinfo)
+        msg  $ alignDList len "HaddockDirs:    " (haddockHTMLs pinfo)
 
 cmdList :: Command IO
 cmdList _ = do

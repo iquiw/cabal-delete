@@ -22,13 +22,15 @@ alignDList maxlen dt dds = unlines (map unwords $ align m dds [dt])
     sp = replicate k ' '
     m = maxlen - k
 
-    align _ [] ys         = [reverse ys]
+    align _ [] [_]    = []
+    align _ [] ys     = [reverse ys]
     align n (x:xs) ys =
         let l = length x + 1
         in case () of
-            _ | l > m     -> if null ys
-                             then [x] : align m xs [sp]
-                             else reverse ys : align (m-l) xs [x, sp]
+            _ | l > m     -> case ys of
+                []  -> [x] : align m xs [sp]
+                [y] -> [y, x] : align m xs [sp]
+                _   -> reverse ys : align (m-l) xs [x, sp]
               | l > n     -> reverse ys : align (m-l) xs [x, sp]
               | otherwise -> align (n-l) xs (x:ys)
 
