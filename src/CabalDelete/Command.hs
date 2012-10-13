@@ -6,7 +6,8 @@ module CabalDelete.Command
     , cmdNoDeps
     ) where
 
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>), (<*>))
+import Control.Arrow (first, second)
 import Control.Monad (forM_, void, when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (get, modify)
@@ -28,7 +29,11 @@ import Distribution.Package
     , packageVersion
     )
 import GHC.Paths (docdir)
-import System.Directory (doesDirectoryExist, removeDirectoryRecursive)
+import System.Directory
+    ( doesDirectoryExist
+    , getDirectoryContents
+    , removeDirectoryRecursive
+    )
 import System.FilePath (normalise, takeDirectory)
 
 import CabalDelete.GhcPkg
@@ -42,14 +47,9 @@ data PathResult
     = PathOK
     | PathNotFound
     | PathCommon
+    | PathIgnore
     | PathGhc
     deriving (Eq)
-
-instance Show PathResult where
-    showsPrec _ PathOK       = ("[D] " ++)
-    showsPrec _ PathNotFound = ("[N] " ++)
-    showsPrec _ PathCommon   = ("[I] " ++)
-    showsPrec _ PathGhc      = ("[A] " ++)
 
 
 cmdInfo :: Command RevDependsM
@@ -174,8 +174,15 @@ deleteOne rd = do
             mapM_ (msg . show) ds
             return False
   where
-    msgPR (r, p) = msg (show r ++ p)
+    msgPR (r, p) = msg (resStr r ++ p)
                    >> if r == PathGhc then return True else return False
+
+    resStr PathOK       = "[D] "
+    resStr PathNotFound = "[N] "
+    resStr PathCommon   = "[I] "
+    resStr PathIgnore   = "[I] "
+    resStr PathGhc      = "[A] "
+
 
 checkWith :: String
              -> (RevDepends -> CDM RevDependsM a)
@@ -192,24 +199,30 @@ checkWith name proc = do
     oldVers = tail . reverse . sortBy (comparing rdPkgId)
 
 deletePath :: (PathResult, FilePath) -> IO ()
-deletePath (PathOK, p) = do
-    removeDirectoryRecursive p
-    putStrLn $ "Directory " ++ p ++ " was deleted."
-deletePath (PathNotFound, p)
-    = putStrLn $ "Directory " ++ p ++ " was not found."
-deletePath (PathGhc, p)
-    = putStrLn $ "Directory " ++ p ++ " is a system directory."
-deletePath (PathCommon, p) =
-    putStrLn $ "Directory " ++ p ++ " does not contain package name."
+deletePath (r, p) = do
+    when (r == PathOK) $ removeDirectoryRecursive p
+    putStrLn $ "Directory " ++ p ++ msgDone r
+  where
+    msgDone PathOK       = " was deleted."
+    msgDone PathNotFound = " was not found."
+    msgDone PathGhc      = " is a system directory."
+    msgDone PathCommon   = " does not contain package name."
+    msgDone PathIgnore   = " was not deleted since other version uses it."
 
 getDeletePaths :: String -> RevDepends -> IO [(PathResult, FilePath)]
-getDeletePaths libdir rd =
-    let funcs = [importDirs, libraryDirs, haddockHTMLs]
-        paths = map norm $ nub $ concatMap ($ rdPkgInfo rd) funcs
-    in mapM checkPath paths
+getDeletePaths libdir rd = do
+    let pinfo = rdPkgInfo rd
+        ldirs = (++) <$> libraryDirs <*> importDirs $ pinfo
+    lpaths <- mapM (checkPath . norm) $ nub $ sort ldirs
+    hpaths <- mapM (checkPath . norm) $ haddockHTMLs pinfo
+    noother <- and <$> mapM noOtherFiles lpaths
+    if noother
+        then return $ map (second takeDirectory) lpaths ++ hpaths
+        else return $ lpaths ++ map ignore hpaths
   where
     norm p | "/." `isSuffixOf` p = normalise $ takeDirectory p
            | otherwise           = normalise p
+
     checkPath p = do
         b <- doesDirectoryExist p
         case b of
@@ -227,3 +240,10 @@ getDeletePaths libdir rd =
                           else return (PathOK, p)
                  | otherwise
                    -> return (PathCommon, p)
+
+    noOtherFiles (PathOK, p) = do
+        l <- length <$> getDirectoryContents (takeDirectory p)
+        return $ l == 3 -- == length [".", "..", thisver]
+    noOtherFiles _ = return True
+
+    ignore = first (const PathIgnore)
