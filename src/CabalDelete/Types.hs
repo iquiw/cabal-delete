@@ -14,7 +14,7 @@ module CabalDelete.Types
     , showsPackageId
     ) where
 
-import Control.Monad (liftM2)
+import Control.Applicative ((<$>), (<*>))
 import Control.Monad.Trans.State (StateT, evalStateT)
 import Data.Char (toLower)
 import Data.Function (on)
@@ -75,9 +75,6 @@ instance EqIC PackageIdentifier where
     (=-=) (PackageIdentifier n1 v1) (PackageIdentifier n2 v2) =
         n1 =-= n2 && v1 == v2
 
-instance EqIC InstalledPackageId where
-    (=-=) (InstalledPackageId i1) (InstalledPackageId i2) = i1 =-= i2
-
 data PkgId = PkgId
     { piInstalledId :: InstalledPackageId
     , piSourceId :: PackageIdentifier
@@ -91,7 +88,7 @@ instance Show PkgId where
 
 instance Ord PkgId where
     compare (PkgId _ si1) (PkgId _ si2) = compare si1 si2
-  
+
 -- | returns True if packages' major versions are same.
 (.==) :: PackageEq
 (.==) (PackageIdentifier (PackageName n1) (Version (v1:v1':_) _))
@@ -110,4 +107,4 @@ showsPackageId (PackageIdentifier (PackageName n) v) =
     (n ++) . ("-" ++) . (showVersion v ++)
 
 toPkgId :: InstalledPackageInfo -> PkgId
-toPkgId = liftM2 PkgId installedPackageId sourcePackageId
+toPkgId = PkgId <$> installedPackageId <*> sourcePackageId

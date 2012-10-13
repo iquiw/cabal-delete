@@ -93,7 +93,7 @@ revDependsById i = filterRevDepends f
 revDependsByKey :: InstalledPackageId -> RevDependsM [RevDepends]
 revDependsByKey pk = filterRevDepends f
   where
-    f k _ = piInstalledId k =-= pk
+    f k _ = piInstalledId k == pk
 
 revDependsList :: [PkgId] -> RevDependsM [PkgId]
 revDependsList pis = do
