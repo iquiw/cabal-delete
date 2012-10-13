@@ -7,14 +7,18 @@
 
 Summary
 -------
-cabal-delete deletes installed directories of the specified package
-and unregisters it if it has no reverse dependency and
-it is not installed with ghc.
-It cannot delete executable packages.
+cabal-delete deletes installed directories of the specified package and
+unregisters it if it has no reverse dependency and it is not installed with
+ghc. It cannot delete executable packages.
 
-cabal-delete also has some utility commands to show
-package info, list packages multiple version installed,
-and list packages with no reverse dependency.
+cabal-delete also has some utility commands to show package info,
+list packages multiple version installed, and list packages with no reverse
+dependency.
+
+If parent directory of libraryDirs or importDirs contain no other files than
+to be deleted, then delete the parent directory and haddockHTMLs directories.
+Otherwise, delete the libraryDirs or importDirs and ignore haddockHTMLs
+directories.
 
 Usage
 -----
@@ -65,15 +69,21 @@ This shows name, description, dependencies and reverse dependencies
 as follows::
 
     $ cabal-delete -i failure
-    Name:            failure-0.0.0.3
+    Name:            failure-0.1.1
     Description:     A simple type class for success/failure computations.
-    Depends:         base-4.2.0.1
-    ReverseDepends:  control-monad-failure-0.6.1
+    Depends:         base-4.5.1.0 transformers-0.2.2.0
+    LibraryDirs:     /usr/local/ghc/pkg/lib/failure-0.1.1/ghc-7.4.2
+    ImportDirs:      /usr/local/ghc/pkg/lib/failure-0.1.1/ghc-7.4.2
+    HaddockDirs:     /usr/local/ghc/pkg/share/doc/failure-0.1.1/html
 
-    Name:            failure-0.1.0
+    Name:            failure-0.2.0.1
     Description:     A simple type class for success/failure computations.
-    Depends:         base-4.2.0.1
-    ReverseDepends:  control-monad-failure-0.7.0
+    Depends:         base-4.5.1.0 transformers-0.3.0.0
+    ReverseDepends:  hamlet-1.1.1 http-conduit-1.6.1.2 xml-conduit-1.0.3.1
+                     yesod-core-1.1.3
+    LibraryDirs:     /usr/local/ghc/pkg/lib/failure-0.2.0.1/ghc-7.4.2
+    ImportDirs:      /usr/local/ghc/pkg/lib/failure-0.2.0.1/ghc-7.4.2
+    HaddockDirs:     /usr/local/ghc/pkg/share/doc/failure-0.2.0.1/html
 
 
 Show packages that have multiple versions
@@ -157,6 +167,4 @@ TODO
 2. Do not perform recursive delete if any of dependent packages is ``[A]`` case.
 
 3. `-y` option not to query user's answer (non-interactive mode).
-
-4. Do not delete document directory if the library is installed for other GHC version also.
 
