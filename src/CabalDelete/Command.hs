@@ -16,7 +16,8 @@ import Data.Ord (comparing)
 import Data.List (groupBy, sort, sortBy, nub, isInfixOf, isPrefixOf, isSuffixOf)
 import Data.Version (showVersion)
 import Distribution.InstalledPackageInfo
-    ( description
+    ( InstalledPackageInfo
+    , description
     , depends
     , haddockHTMLs
     , importDirs
@@ -28,13 +29,14 @@ import Distribution.Package
     , packageName
     , packageVersion
     )
+import Distribution.System (OS(Windows), buildOS)
 import GHC.Paths (docdir)
 import System.Directory
     ( doesDirectoryExist
     , getDirectoryContents
     , removeDirectoryRecursive
     )
-import System.FilePath ((</>), normalise, takeDirectory)
+import System.FilePath ((</>), joinPath, normalise, splitPath, takeDirectory)
 
 import CabalDelete.GhcPkg
 import CabalDelete.Parse
@@ -154,7 +156,7 @@ deleteOne rd = do
     libdir <- ghcLibdir <$> get
     case rdRDepends rd of
         [] -> do
-            paths <- liftIO $ getDeletePaths libdir rd
+            paths <- liftIO $ getDeletePaths libdir $ rdPkgInfo rd
             case paths of
                 [] -> msg "No delete path found."
                 _  -> do
@@ -213,12 +215,11 @@ deletePath (r, p) = do
     msgDone PathCommon   = " does not contain package name."
     msgDone PathIgnore   = " was not deleted since other version uses it."
 
-getDeletePaths :: String -> RevDepends -> IO [(PathResult, FilePath)]
-getDeletePaths libdir rd = do
-    let pinfo = rdPkgInfo rd
-        ldirs = (++) <$> libraryDirs <*> importDirs $ pinfo
+getDeletePaths :: String -> InstalledPackageInfo -> IO [(PathResult, FilePath)]
+getDeletePaths libdir pinfo = do
+    let ldirs = (++) <$> libraryDirs <*> importDirs $ pinfo
     lpaths <- mapM (checkPath . norm) $ nub $ sort ldirs
-    hpaths <- mapM (checkPath . norm) $ haddockHTMLs pinfo
+    hpaths <- mapM (checkPath . norm) $ sharedDirs pinfo
     noother <- and <$> mapM noOtherVer lpaths
     if noother
         then return $ map (second takeDirectory) lpaths ++ hpaths
@@ -230,20 +231,16 @@ getDeletePaths libdir rd = do
     checkPath p = do
         b <- doesDirectoryExist p
         case b of
-            False | "$topdir" `isPrefixOf` p ||
-                    "$httptopdir" `isPrefixOf` p
+            False | "$topdir" `isPrefixOf` p || "$httptopdir" `isPrefixOf` p
                     -> return (PathGhc, p)
                   | otherwise
                     -> return (PathNotFound, p)
-            True | norm libdir `isInfixOf` p ||
-                   norm docdir `isInfixOf` p
-                   -> return (PathGhc, p)
-                 | show (rdPkgId rd) `isInfixOf` takeDirectory p
-                   -> if "html" `isSuffixOf` p
-                          then return (PathOK, takeDirectory p)
-                          else return (PathOK, p)
-                 | otherwise
-                   -> return (PathCommon, p)
+            True  | norm libdir `isInfixOf` p || norm docdir `isInfixOf` p
+                    -> return (PathGhc, p)
+                  | show (toPkgId pinfo) `isInfixOf` p
+                    -> return (PathOK, p)
+                  | otherwise
+                    -> return (PathCommon, p)
 
     noOtherVer (PathOK, p) = do
         fs <- filter isGHC <$> getDirectoryContents (takeDirectory p)
@@ -256,3 +253,19 @@ getDeletePaths libdir rd = do
         Left _  -> False
 
     ignore = first (const PathIgnore)
+
+-- | Returns shared directories in which Haddock and other documents, such as
+-- LICENSE, README, etc., are installed.
+-- On Windows, other documents are installed in the same directory as
+-- "html" directory exists.
+-- On Unix, they are installed in "share" directory above the "doc" directory.
+sharedDirs :: InstalledPackageInfo -> [FilePath]
+sharedDirs pinfo = concatMap go $ haddockHTMLs pinfo
+  where
+    go p | "html" `isSuffixOf` p = let p' = takeDirectory p
+                                   in if buildOS == Windows
+                                      then [p']
+                                      else [p', removeDoc p']
+         | otherwise             = [p]
+
+    removeDoc = joinPath . filter (/= "doc/") . splitPath
