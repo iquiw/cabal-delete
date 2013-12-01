@@ -1,5 +1,5 @@
 name:                cabal-delete
-version:             0.5.2.0
+version:             0.5.3.0
 synopsis:            Command line tool to delete cabal library packages
 
 description:         cabal-delete deletes installed directories of
@@ -31,7 +31,7 @@ executable cabal-delete
   build-depends:
     base >= 4.2 && < 5,
     bytestring,
-    Cabal >= 1.6 && < 1.17,
+    Cabal >= 1.6 && < 1.19,
     containers,
     directory,
     filepath,
