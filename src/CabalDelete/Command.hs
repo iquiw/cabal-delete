@@ -187,8 +187,7 @@ deleteOne rd = do
             mapM_ (msg . show) ds
             return False
   where
-    msgPR (r, p) = msg (resStr r ++ p)
-                   >> if r == PathGhc then return True else return False
+    msgPR (r, p) = msg (resStr r ++ p) >> return (r == PathGhc)
 
     resStr PathOK       = "[D] "
     resStr PathNotFound = "[N] "
@@ -209,7 +208,7 @@ checkWith name proc = do
                (mapM proc (oldVers rds))
                (return [])
   where
-    oldVers = tail . reverse . sortBy (comparing rdPkgId)
+    oldVers = tail . sortBy (flip (comparing rdPkgId))
 
 deletePath :: (PathResult, FilePath) -> IO ()
 deletePath (r, p) = do
@@ -227,13 +226,13 @@ getDeletePaths libdir pinfo = do
     let ldirs = (++) <$> libraryDirs <*> importDirs $ pinfo
     lpaths <- mapM (checkPath . norm) $ nub $ sort ldirs
     hpaths <- mapM (checkPath . norm) $ sharedDirs pinfo
-    if and $ map versionWise lpaths
+    if all versionWise lpaths
         then return $ lpaths ++ hpaths
         else do
         noother <- and <$> mapM noOtherVer lpaths
-        if noother
-            then return $ map (second takeDirectory) lpaths ++ hpaths
-            else return $ lpaths ++ map ignore hpaths
+        return (if noother
+                then map (second takeDirectory) lpaths ++ hpaths
+                else lpaths ++ map ignore hpaths)
   where
     norm p | "/." `isSuffixOf` p = normalise $ takeDirectory p
            | otherwise           = normalise p
