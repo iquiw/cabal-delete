@@ -36,7 +36,14 @@ import System.Directory
     , getDirectoryContents
     , removeDirectoryRecursive
     )
-import System.FilePath ((</>), joinPath, normalise, splitPath, takeDirectory)
+import System.FilePath
+    ( (</>)
+    , joinPath
+    , normalise
+    , splitPath
+    , takeDirectory
+    , takeFileName
+    )
 
 import CabalDelete.GhcPkg
 import CabalDelete.Parse
@@ -52,7 +59,7 @@ data PathResult
     | PathCommon
     | PathIgnore
     | PathGhc
-    deriving (Eq)
+    deriving (Eq, Show)
 
 
 cmdInfo :: Command RevDependsM
@@ -220,10 +227,13 @@ getDeletePaths libdir pinfo = do
     let ldirs = (++) <$> libraryDirs <*> importDirs $ pinfo
     lpaths <- mapM (checkPath . norm) $ nub $ sort ldirs
     hpaths <- mapM (checkPath . norm) $ sharedDirs pinfo
-    noother <- and <$> mapM noOtherVer lpaths
-    if noother
-        then return $ map (second takeDirectory) lpaths ++ hpaths
-        else return $ lpaths ++ map ignore hpaths
+    if and $ map versionWise lpaths
+        then return $ lpaths ++ hpaths
+        else do
+        noother <- and <$> mapM noOtherVer lpaths
+        if noother
+            then return $ map (second takeDirectory) lpaths ++ hpaths
+            else return $ lpaths ++ map ignore hpaths
   where
     norm p | "/." `isSuffixOf` p = normalise $ takeDirectory p
            | otherwise           = normalise p
@@ -251,6 +261,11 @@ getDeletePaths libdir pinfo = do
     isGHC f = case parsePkgId f of
         Right i -> packageName i == PackageName "ghc"
         Left _  -> False
+
+    versionWise (PathOK, p) = case parsePkgId (takeFileName p) of
+        Right i -> packageName i == packageName (toPkgId pinfo)
+        Left _  -> False
+    versionWise _ = False
 
     ignore = first (const PathIgnore)
 
