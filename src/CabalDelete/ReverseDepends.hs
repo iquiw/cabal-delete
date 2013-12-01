@@ -50,10 +50,15 @@ withRevDepends proc = do
 
 load :: IO (Map PkgId RevDepends, PackageIndex)
 load = do
+#if MIN_VERSION_Cabal(1,18,0)
+    (compiler, _, pcfg) <- configCompilerEx (Just GHC) Nothing Nothing
+                           defaultProgramConfiguration normal
+#else
     (compiler, pcfg) <- configCompiler (Just GHC) Nothing Nothing
-                                       defaultProgramConfiguration normal
+                        defaultProgramConfiguration normal
+#endif
     pidx <- getInstalledPackages normal compiler
-                                  [GlobalPackageDB, UserPackageDB] pcfg
+            [GlobalPackageDB, UserPackageDB] pcfg
 #if MIN_VERSION_Cabal(1,10,0)
     return (M.fromList $ r $ allPackages pidx, pidx)
 #else
