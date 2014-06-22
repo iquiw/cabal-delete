@@ -97,7 +97,7 @@ cmdList _ = do
             lift $ printPkgVers gs
   where
     getPkgGroups eq = do
-        ps <- liftIO $ concatMap snd <$> ghcPkgList
+        ps <- concatMap snd <$> ghcPkgList
         return [ g | g <- groupBy eq $ sort ps, length g >= 2 ]
 
     printPkgVers [] = return ()
@@ -151,7 +151,8 @@ deleteProc rd  = do
             [rd'] -> do
                 b <- deleteOne rd'
                 when b $ do
-                    lift reload
+                    scope <- cdScope <$> get
+                    lift $ reload scope
                     proceed is
             _     ->
                 error $ "Not Supported: mutilple packages with same version: "
@@ -176,10 +177,9 @@ deleteOne rd = do
                   | otherwise ->
                       askIf ("Do you want to delete "
                             ++ show (rdPkgId rd) ++ " ?")
-                            (liftIO $ do
-                                mapM_ deletePath paths
+                            (do liftIO $ mapM_ deletePath paths
                                 unregisterPackage $ rdPkgId rd
-                                putStrLn $ show (rdPkgId rd) ++ " was deleted."
+                                msg $ show (rdPkgId rd) ++ " was deleted."
                                 return True)
                             (msg "Canceled." >> return False)
         ds -> do

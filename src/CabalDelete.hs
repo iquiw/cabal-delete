@@ -20,6 +20,7 @@ defaultCfg = CDConfig
     { cdCmd       = CmdDelete
     , cdDryRun    = False
     , cdGhcLibdir = GHC.Paths.libdir
+    , cdScope     = ScopeUser
     , cdMinorOnly = False
     , cdRecursive = False
     , cdYesToAll  = False
@@ -30,6 +31,14 @@ options =
     [ Option "R" ["recursive"]
       (NoArg $ \cfg -> return $ cfg { cdRecursive = True })
       "delete packages recuresively"
+
+    , Option "a" ["all"]
+      (NoArg $ \cfg -> return $ cfg { cdScope = ScopeAll })
+      "process both user and global packages"
+
+    , Option "g" ["global"]
+      (NoArg $ \cfg -> return $ cfg { cdScope = ScopeGlobal })
+      "process global packages instead of local packages"
 
     , Option "h" ["help"]
       (NoArg $ \cfg -> return $ cfg { cdCmd = CmdHelp })
@@ -88,9 +97,9 @@ cdMain :: CDConfig -> [String] -> IO ()
 cdMain cfg pkgs =
     case (cdCmd cfg, pkgs) of
         (CmdDelete, []) -> usage "specify package name"
-        (CmdDelete, _)  -> withRevDepends $ runCDM (cmdDelete pkgs) cfg
+        (CmdDelete, _)  -> withRevDepends (cdScope cfg) $ runCDM (cmdDelete pkgs) cfg
         (CmdInfo, [])   -> usage "specify package name"
-        (CmdInfo, _)    -> withRevDepends $ runCDM (cmdInfo pkgs) cfg
+        (CmdInfo, _)    -> withRevDepends (cdScope cfg) $ runCDM (cmdInfo pkgs) cfg
         (CmdList, _)    -> runCDM (cmdList pkgs) cfg
-        (CmdNoDeps, _)  -> withRevDepends $ runCDM (cmdNoDeps pkgs) cfg
+        (CmdNoDeps, _)  -> withRevDepends (cdScope cfg) $ runCDM (cmdNoDeps pkgs) cfg
         _               -> usage ""

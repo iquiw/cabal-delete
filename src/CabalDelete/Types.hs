@@ -5,9 +5,12 @@ module CabalDelete.Types
     , runCDM
     , PkgConfList
     , PkgId(..)
+    , PackageScope(..)
     , (=-=)
     , (.==)
+    , getPackageIndex
     , toPkgId
+    , scopeToFlag
     , showsPackageId
     ) where
 
@@ -25,6 +28,11 @@ import Distribution.Package
     , PackageIdentifier(..)
     , PackageName(..)
     )
+import Distribution.Simple.Compiler (PackageDB(..))
+import Distribution.Simple.GHC (getInstalledPackages, getPackageDBContents)
+import Distribution.Simple.PackageIndex (PackageIndex)
+import Distribution.Simple.Program (ProgramConfiguration)
+import Distribution.Verbosity (Verbosity)
 
 data CDCmd
     = CmdHelp
@@ -35,12 +43,15 @@ data CDCmd
     | CmdVersion
     deriving (Eq, Show, Ord)
 
+data PackageScope = ScopeUser | ScopeGlobal | ScopeAll deriving (Eq, Show)
+
 data CDConfig = CDConfig
     { cdCmd       :: CDCmd
     , cdDryRun    :: Bool
     , cdGhcLibdir :: FilePath
     , cdMinorOnly :: Bool
     , cdRecursive :: Bool
+    , cdScope     :: PackageScope
     , cdYesToAll  :: Bool
     }
 
@@ -97,3 +108,16 @@ showsPackageId (PackageIdentifier (PackageName n) v) =
 
 toPkgId :: InstalledPackageInfo -> PkgId
 toPkgId = PkgId <$> installedPackageId <*> sourcePackageId
+
+scopeToFlag :: PackageScope -> [String] -> [String]
+scopeToFlag ScopeUser   = ("--user":)
+scopeToFlag ScopeGlobal = ("--global":)
+scopeToFlag ScopeAll    = id
+
+getPackageIndex :: PackageScope -> Verbosity -> ProgramConfiguration
+                -> IO PackageIndex
+getPackageIndex ScopeAll v pcfg =
+    getInstalledPackages v [GlobalPackageDB, UserPackageDB] pcfg
+getPackageIndex scope v pcfg =
+    getPackageDBContents v
+    (if scope == ScopeUser then UserPackageDB else GlobalPackageDB) pcfg

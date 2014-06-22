@@ -43,36 +43,24 @@ data RevDependsMap = RDM
 
 type RevDependsM = StateT RevDependsMap IO
 
-withRevDepends :: RevDependsM a -> IO a
-withRevDepends proc = do
-    rdm <- uncurry RDM <$> liftIO load
-    evalStateT proc rdm
+withRevDepends :: PackageScope -> RevDependsM a -> IO a
+withRevDepends scope process = do
+    rdm <- uncurry RDM <$> liftIO (load scope)
+    evalStateT process rdm
 
-load :: IO (Map PkgId RevDepends, PackageIndex)
-load = do
-#if MIN_VERSION_Cabal(1,18,0)
-    (compiler, _, pcfg) <- configCompilerEx (Just GHC) Nothing Nothing
-                           defaultProgramConfiguration normal
-#else
-    (compiler, pcfg) <- configCompiler (Just GHC) Nothing Nothing
-                        defaultProgramConfiguration normal
-#endif
-    pidx <- getInstalledPackages normal compiler
-            [GlobalPackageDB, UserPackageDB] pcfg
-#if MIN_VERSION_Cabal(1,10,0)
+load :: PackageScope -> IO (Map PkgId RevDepends, PackageIndex)
+load scope = do
+    (_, _, pcfg) <- configCompilerEx (Just GHC) Nothing Nothing
+                    defaultProgramConfiguration normal
+    pidx <- getPackageIndex scope normal pcfg
     return (M.fromList $ r $ allPackages pidx, pidx)
-#else
-    case pidx of
-        Just pidx' -> return (M.fromList $ r $ allPackages pidx', pidx')
-        Nothing    -> return (M.empty, fromList [])
-#endif
   where
     r ps = [ (toPkgId p, RD p (d (installedPackageId p) ps)) | p <- ps ]
     d i ps = [ toPkgId p | p <- ps, i `elem` depends p ]
 
-reload :: RevDependsM ()
-reload = do
-    rdm <- liftIO $ uncurry RDM <$> load
+reload :: PackageScope -> RevDependsM ()
+reload scope = do
+    rdm <- liftIO $ uncurry RDM <$> load scope
     put rdm
 
 resolveName :: String -> RevDependsM [RevDepends]

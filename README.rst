@@ -145,6 +145,8 @@ The following options are available::
     usage: cabal-delete [option] [package...]
 
       -R  --recursive          delete packages recuresively
+      -a  --all                process both user and global packages
+      -g  --global             process global packages instead of local packages
       -h  --help               show this help
       -i  --info               show package info
       -l  --multiple-versions  list packages with multiple versions
@@ -157,7 +159,7 @@ The following options are available::
 Bug
 ---
 * cabal-delete cannot distinguish if same packages (same version) are installed
-  in both global and user's package databases.
+  in both global and user's package databases when ``--all`` option is specified.
 
 
 TODO
