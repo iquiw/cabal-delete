@@ -15,6 +15,6 @@ main = do
     case e of
         Left u            -> usage u
         Right (cfg, pkgs) ->
-            case cmd cfg of
+            case cdCmd cfg of
                 CmdVersion -> putStrLn $ "cabal-delete " ++ showVersion version
                 _          -> cdMain cfg pkgs

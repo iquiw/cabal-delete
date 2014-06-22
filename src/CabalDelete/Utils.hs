@@ -36,7 +36,7 @@ alignDList maxlen dt dds = unlines (map unwords $ align m dds [dt])
 
 askIf :: (Functor m, MonadIO m) => String -> CDM m a -> CDM m a -> CDM m a
 askIf s thenProc elseProc = do
-    y <- yesToAll <$> get
+    y <- cdYesToAll <$> get
     if y then liftIO (query >> putStrLn "A") >> thenProc else qandgo
   where
     qandgo = do
@@ -44,7 +44,7 @@ askIf s thenProc elseProc = do
         case ans of
             "y" -> thenProc
             "n" -> elseProc
-            "a" -> modify (\x -> x { yesToAll = True }) >> thenProc
+            "a" -> modify (\x -> x { cdYesToAll = True }) >> thenProc
             _   -> qandgo
 
     query = do

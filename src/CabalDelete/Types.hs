@@ -36,12 +36,12 @@ data CDCmd
     deriving (Eq, Show, Ord)
 
 data CDConfig = CDConfig
-    { cmd       :: CDCmd
-    , dryRun    :: Bool
-    , ghcLibdir :: FilePath
-    , minorOnly :: Bool
-    , recursive :: Bool
-    , yesToAll  :: Bool
+    { cdCmd       :: CDCmd
+    , cdDryRun    :: Bool
+    , cdGhcLibdir :: FilePath
+    , cdMinorOnly :: Bool
+    , cdRecursive :: Bool
+    , cdYesToAll  :: Bool
     }
 
 type CDM m = StateT CDConfig m

@@ -86,7 +86,7 @@ cmdInfo names = lift $ forM_ names (\n -> do
 
 cmdList :: Command IO
 cmdList _ = do
-    b <- minorOnly <$> get
+    b <- cdMinorOnly <$> get
     let m = if b then " minor " else " "
     gs <- getPkgGroups (if b then (.==) else (=-=) `on` packageName)
     case gs of
@@ -125,15 +125,15 @@ cmdNoDeps _ = do
 cmdDelete :: Command RevDependsM
 cmdDelete names = do
     dir <- liftIO getLibDir
-    modify (\x -> x { ghcLibdir = dir })
-    n <- dryRun <$> get
+    modify (\x -> x { cdGhcLibdir = dir })
+    n <- cdDryRun <$> get
     when n $ msg "=== CHECK MODE. No package will be deleted actually. ==="
     forM_ names $ flip checkWith deleteProc
 
 
 deleteProc :: RevDepends -> CDM RevDependsM ()
 deleteProc rd  = do
-    r <- recursive <$> get
+    r <- cdRecursive <$> get
     if r then
         do
             pis <- lift $ revDependsList $ rdPkgId rd : rdRDepends rd
@@ -159,8 +159,8 @@ deleteProc rd  = do
 
 deleteOne :: RevDepends -> CDM RevDependsM Bool
 deleteOne rd = do
-    del <- not . dryRun <$> get
-    libdir <- ghcLibdir <$> get
+    del <- not . cdDryRun <$> get
+    libdir <- cdGhcLibdir <$> get
     case rdRDepends rd of
         [] -> do
             paths <- liftIO $ getDeletePaths libdir $ rdPkgInfo rd
