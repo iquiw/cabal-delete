@@ -4,17 +4,19 @@ module CabalDelete.Parse
     , parseGhcPkgList
     ) where
 
-import Control.Applicative
-import qualified Data.ByteString.Char8 as C
-import Data.List
-import Data.Version
-import Distribution.Package
-import Data.Attoparsec.Char8
+import           Control.Applicative
+import           Data.Attoparsec.Text
+import           Data.List
+import           Data.Monoid (mempty)
+import qualified Data.Text as T
+import           Data.Version
+import           Distribution.Package
+import           Prelude
 
-import CabalDelete.Types
+import           CabalDelete.Types
 
 parseGhcPkgList :: String -> Either String PkgConfList
-parseGhcPkgList = eitherResult . flip feed C.empty . parse _ghcPkgList . C.pack
+parseGhcPkgList = eitherResult . flip feed mempty . parse _ghcPkgList . T.pack
 
 _ghcPkgList :: Parser PkgConfList
 _ghcPkgList = many (try _warnMsg) *> many ((,) <$> _pkgConfPath <*> _pkgList)
@@ -39,7 +41,7 @@ _eol :: Parser ()
 _eol = () <$ (optional (char '\r') >> char '\n')
 
 parsePkgId :: String -> Either String PackageId
-parsePkgId = eitherResult . flip feed C.empty . parse _pkgId . C.pack
+parsePkgId = eitherResult . flip feed mempty . parse _pkgId . T.pack
 
 _pkgId :: Parser PackageId
 _pkgId = go []

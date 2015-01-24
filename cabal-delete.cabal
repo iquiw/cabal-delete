@@ -30,7 +30,6 @@ executable cabal-delete
   hs-source-dirs:    src
   build-depends:
     base >= 4.2 && < 5,
-    bytestring,
     Cabal >= 1.18 && < 1.23,
     containers,
     directory,
@@ -38,7 +37,8 @@ executable cabal-delete
     process,
     attoparsec >= 0.10.0.0,
     ghc-paths,
-    transformers >= 0.2 && < 0.5
+    transformers >= 0.2 && < 0.5,
+    text >= 1.0
   ghc-options:        -Wall
   other-modules:
     CabalDelete
