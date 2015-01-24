@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module CabalDelete.Types
     ( CDCmd(..)
     , CDConfig(..)
@@ -12,6 +13,9 @@ module CabalDelete.Types
     , toPkgId
     , scopeToFlag
     , showsPackageId
+#if !MIN_VERSION_Cabal(1, 22, 0)
+    , InstalledPackageIndex
+#endif
     ) where
 
 import Control.Applicative ((<$>), (<*>))
@@ -30,9 +34,17 @@ import Distribution.Package
     )
 import Distribution.Simple.Compiler (PackageDB(..))
 import Distribution.Simple.GHC (getInstalledPackages, getPackageDBContents)
+#if MIN_VERSION_Cabal(1, 22, 0)
+import Distribution.Simple.PackageIndex (InstalledPackageIndex)
+#else
 import Distribution.Simple.PackageIndex (PackageIndex)
+#endif
 import Distribution.Simple.Program (ProgramConfiguration)
 import Distribution.Verbosity (Verbosity)
+
+#if !MIN_VERSION_Cabal(1, 22, 0)
+type InstalledPackageIndex = PackageIndex
+#endif
 
 data CDCmd
     = CmdHelp
@@ -115,7 +127,7 @@ scopeToFlag ScopeGlobal = ("--global":)
 scopeToFlag ScopeAll    = id
 
 getPackageIndex :: PackageScope -> Verbosity -> ProgramConfiguration
-                -> IO PackageIndex
+                -> IO InstalledPackageIndex
 getPackageIndex ScopeAll v pcfg =
     getInstalledPackages v [GlobalPackageDB, UserPackageDB] pcfg
 getPackageIndex scope v pcfg =

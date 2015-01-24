@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 module CabalDelete.ReverseDepends
     ( RevDepends(rdPkgInfo, rdRDepends)
     , RevDependsM
@@ -22,7 +21,7 @@ import Distribution.Simple.Compiler
 import Distribution.Simple.Configure
 import Distribution.Simple.PackageIndex
 import Distribution.Simple.Program
-import Distribution.Package hiding (depends)
+import Distribution.Package hiding (depends, installedPackageId)
 import Distribution.Verbosity
 
 import CabalDelete.Types
@@ -38,7 +37,7 @@ rdPkgId = toPkgId . rdPkgInfo
 
 data RevDependsMap = RDM
     { rdmCache :: Map PkgId RevDepends
-    , rdmIndex :: PackageIndex
+    , rdmIndex :: InstalledPackageIndex
     }
 
 type RevDependsM = StateT RevDependsMap IO
@@ -48,7 +47,7 @@ withRevDepends scope process = do
     rdm <- uncurry RDM <$> liftIO (load scope)
     evalStateT process rdm
 
-load :: PackageScope -> IO (Map PkgId RevDepends, PackageIndex)
+load :: PackageScope -> IO (Map PkgId RevDepends, InstalledPackageIndex)
 load scope = do
     (_, _, pcfg) <- configCompilerEx (Just GHC) Nothing Nothing
                     defaultProgramConfiguration normal
