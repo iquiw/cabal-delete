@@ -6,7 +6,7 @@ module CabalDelete.Command
     ) where
 
 import Control.Applicative ((<$>), (<*>))
-import Control.Arrow (first, second)
+import Control.Arrow (second)
 import Control.Monad (filterM, forM_, void, when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (get, modify)
@@ -229,10 +229,10 @@ getDeletePaths libdir pinfo = do
     if all versionWise lpaths
         then return $ lpaths ++ hpaths
         else do
-        noother <- and <$> mapM noOtherVer lpaths
-        return (if noother
-                then map (second takeDirectory) lpaths ++ hpaths
-                else lpaths ++ map ignore hpaths)
+            noother <- and <$> mapM noOtherVer lpaths
+            return (if noother
+                        then map (second takeDirectory) lpaths ++ hpaths
+                        else lpaths ++ hpaths)
   where
     norm p | "/." `isSuffixOf` p = normalise $ takeDirectory p
            | otherwise           = normalise p
@@ -265,8 +265,6 @@ getDeletePaths libdir pinfo = do
         Right i -> packageName i == packageName (toPkgId pinfo)
         Left _  -> False
     versionWise _ = False
-
-    ignore = first (const PathIgnore)
 
 -- | Returns shared directories in which Haddock and other documents, such as
 -- LICENSE, README, etc., are installed.
