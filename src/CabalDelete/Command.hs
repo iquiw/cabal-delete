@@ -246,10 +246,15 @@ getDeletePaths libdir pinfo = do
                     -> return (PathNotFound, p)
             True  | norm libdir `isInfixOf` p || norm docdir `isInfixOf` p
                     -> return (PathGhc, p)
-                  | show (toPkgId pinfo) `isInfixOf` p
-                    -> return (PathOK, p)
                   | otherwise
-                    -> return (PathCommon, p)
+                    -> do
+                        let pkgId = toPkgId pinfo
+                        path <- pkgPath pkgId
+                        return
+                            ( if path `isInfixOf` p || show pkgId `isInfixOf` p
+                                  then PathOK
+                                  else PathCommon
+                            , p)
 
     noOtherVer (PathOK, p) = do
         fs <- filter isGHC <$> getDirectoryContents (takeDirectory p)

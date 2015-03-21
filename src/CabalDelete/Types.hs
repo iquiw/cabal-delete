@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 module CabalDelete.Types
-    ( CDCmd(..)
+    (
+      CDCmd(..)
     , CDConfig(..)
     , CDM
     , runCDM
@@ -10,6 +11,7 @@ module CabalDelete.Types
     , (=-=)
     , (.==)
     , getPackageIndex
+    , pkgPath
     , toPkgId
     , scopeToFlag
     , showsPackageId
@@ -18,29 +20,44 @@ module CabalDelete.Types
 #endif
     ) where
 
+import Prelude hiding ((<*>))
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad.Trans.State (StateT, evalStateT)
 import Data.Char (toLower)
 import Data.Function (on)
+import Data.Ord (comparing)
 import Data.Version (Version(..), showVersion)
 import Distribution.InstalledPackageInfo
-    (InstalledPackageInfo, installedPackageId, sourcePackageId)
+    (
+      InstalledPackageInfo
+    , installedPackageId
+    , sourcePackageId
+    )
 import Distribution.Package
-    ( InstalledPackageId(..)
+    (
+      InstalledPackageId(..)
     , Package(..)
     , PackageId
     , PackageIdentifier(..)
     , PackageName(..)
     )
-import Distribution.Simple.Compiler (PackageDB(..))
+import Distribution.Simple.Compiler (PackageDB(..) , CompilerFlavor(..))
+import Distribution.Simple.Configure (configCompilerEx)
 import Distribution.Simple.GHC (getInstalledPackages, getPackageDBContents)
 #if MIN_VERSION_Cabal(1, 22, 0)
+import Distribution.InstalledPackageInfo (packageKey)
 import Distribution.Simple.PackageIndex (InstalledPackageIndex)
+import Distribution.Simple.Compiler (packageKeySupported)
 #else
 import Distribution.Simple.PackageIndex (PackageIndex)
 #endif
-import Distribution.Simple.Program (ProgramConfiguration)
-import Distribution.Verbosity (Verbosity)
+import Distribution.Simple.Program
+    (
+      ProgramConfiguration
+    , defaultProgramConfiguration
+    )
+import Distribution.Text (display)
+import Distribution.Verbosity (Verbosity, normal)
 
 #if !MIN_VERSION_Cabal(1, 22, 0)
 type InstalledPackageIndex = PackageIndex
@@ -95,17 +112,18 @@ instance EqIC PackageIdentifier where
 
 data PkgId = PkgId
     { piInstalledId :: InstalledPackageId
-    , piSourceId :: PackageIdentifier
+    , piSourceId    :: PackageIdentifier
+    , piKey         :: String
     } deriving Eq
 
 instance Package PkgId where
-    packageId (PkgId _ si) = si
+    packageId = piSourceId
 
 instance Show PkgId where
-    showsPrec _ (PkgId _ si) = showsPackageId si
+    showsPrec _ = showsPackageId . piSourceId
 
 instance Ord PkgId where
-    compare (PkgId _ si1) (PkgId _ si2) = compare si1 si2
+    compare = comparing piSourceId
 
 -- | returns True if packages' major versions are same.
 (.==) :: PackageId -> PackageId -> Bool
@@ -119,7 +137,25 @@ showsPackageId (PackageIdentifier (PackageName n) v) =
     (n ++) . ("-" ++) . (showVersion v ++)
 
 toPkgId :: InstalledPackageInfo -> PkgId
-toPkgId = PkgId <$> installedPackageId <*> sourcePackageId
+toPkgId = PkgId <$> installedPackageId <*> sourcePackageId <*> key
+  where
+#if MIN_VERSION_Cabal(1, 22, 0)
+    key = display . packageKey
+#else
+    key = show . sourcePackageId
+#endif
+
+pkgPath :: PkgId -> IO FilePath
+#if MIN_VERSION_Cabal(1, 22, 0)
+pkgPath pkgId = do
+    (compiler, _, _) <- configCompilerEx (Just GHC) Nothing Nothing
+                        defaultProgramConfiguration normal
+    if packageKeySupported compiler
+        then return $ piKey pkgId
+        else return $ show pkgId
+#else
+pkgPath = return . show
+#endif
 
 scopeToFlag :: PackageScope -> [String] -> [String]
 scopeToFlag ScopeUser   = ("--user":)
